@@ -1,6 +1,6 @@
 ---
-name: RE:ON Custom issue template
-about: RE:ON 이슈 템플릿
+name: WalktoWall Custom issue template
+about: WalktoWall 이슈 템플릿
 title: "[TYPE] 작업 내용 ex. [FEAT] 게시글 CRUD 구현"
 labels: ''
 assignees: ''
