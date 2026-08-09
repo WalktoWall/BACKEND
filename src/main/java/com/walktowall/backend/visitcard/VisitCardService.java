@@ -6,6 +6,7 @@ import com.walktowall.backend.user.User;
 import com.walktowall.backend.user.UserRepository;
 import com.walktowall.backend.visitcard.dto.VisitCardCreateRequest;
 import com.walktowall.backend.visitcard.dto.VisitCardResponse;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,18 +31,16 @@ public class VisitCardService {
         OfflineStore offlineStore = offlineStoreRepository.findById(request.getStoreId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다."));
 
-        VisitCard visitCard = new VisitCard();
-
-        visitCard.setUser(user);
-        visitCard.setOfflineStore(offlineStore);
-        visitCard.setFindProductCategory(request.getFindProductCategory());
-        visitCard.setMoodCategory(request.getMoodCategory());
-        visitCard.setPurposeText(request.getPurposeText());
-        visitCard.setVisitTime(request.getVisitTime());
-        visitCard.setSupportStatus(request.getSupportStatus());
-
-        // 실제 AI 연동 전까지는 빈 값으로 저장
-        visitCard.setAiMood(null);
+        VisitCard visitCard = VisitCard.builder()
+                .user(user)
+                .offlineStore(offlineStore)
+                .findProductCategory(request.getFindProductCategory())
+                .moodCategory(request.getMoodCategory())
+                .purposeText(request.getPurposeText())
+                .visitTime(request.getVisitTime())
+                .supportStatus(request.getSupportStatus())
+                .aiMood(null) // AI 연동 전까지는 빈 값
+                .build();
 
         VisitCard savedVisitCard = visitCardRepository.save(visitCard);
 
