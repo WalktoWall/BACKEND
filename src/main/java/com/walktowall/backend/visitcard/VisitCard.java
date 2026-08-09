@@ -17,7 +17,7 @@ public class VisitCard {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "visit_card_id")
-    private Long visitCardId;
+    private Integer visitCardId;
 
     // visit card를 작성한 user
     @ManyToOne
@@ -50,8 +50,8 @@ public class VisitCard {
     private Integer supportStatus;
 
     // AI 한 줄 요약: 실제 AI 연동 전이라 비워둠
-    @Column(name = "ai_match")
-    private String aiMatch;
+    @Column(name = "ai_mood")
+    private String aiMood;
 
     // Visit Card 생성 시각
     @Column(name = "created_at", nullable = false)

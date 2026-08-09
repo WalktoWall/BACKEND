@@ -13,7 +13,7 @@ public class OfflineStore {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "store_id")   // DB 컬럼명
-    private Long storeId;
+    private Integer storeId;
 
     @Column(name = "region_category", nullable = false)
     private Integer regionCategory; // 지역 카테고리 (1=서울, 2=인천 등)
