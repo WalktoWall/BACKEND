@@ -3,16 +3,16 @@ package com.walktowall.backend.visitcard;
 import com.walktowall.backend.store.OfflineStore;
 import com.walktowall.backend.user.User;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "visit_cards")
-
 public class VisitCard {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
