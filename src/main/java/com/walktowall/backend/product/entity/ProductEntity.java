@@ -25,4 +25,10 @@ public class ProductEntity {
 
     @Column(name = "product_detail") // ERD의 대표 메뉴(여러 메뉴를 하나의 문자열로 저장)
     private String productDetail;
+
+    @Column(name = "stock")
+    private Integer stock;
+
+    @Column(name = "location")
+    private String location;
 }
