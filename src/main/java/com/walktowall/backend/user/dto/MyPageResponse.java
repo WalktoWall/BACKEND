@@ -13,10 +13,11 @@ public class MyPageResponse {
     private String message;
     private Integer userId;
     private String userName;
+    private  StyleBoard styleBoard;
 
     @Getter
     @Builder
-    private static class styleBoard {
+    public static class StyleBoard {
         private Integer storeId;
         private LocalDateTime enterTime;
     }
