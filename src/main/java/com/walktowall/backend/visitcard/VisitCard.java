@@ -30,7 +30,7 @@ public class VisitCard {
     private OfflineStore offlineStore;
 
     // 찾는 상품 카테고리
-    @Column(name = "find_product_category", nullable = false)
+    @Column(name = "find_product_category", nullable = true)
     private Integer findProductCategory;
 
     // 오늘의 무드 카테고리
@@ -38,11 +38,11 @@ public class VisitCard {
     private Integer moodCategory;
 
     // 방문 목적 또는 자유 입력 내용
-    @Column(name = "purpose_text")
+    @Column(name = "purpose_text", nullable = false)
     private String purposeText;
 
     // 방문 예정 시간
-    @Column(name = "visit_time")
+    @Column(name = "visit_time", nullable = false)
     private LocalDateTime visitTime;
 
     // 직원 응대 희망 여부/상태
