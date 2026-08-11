@@ -64,7 +64,7 @@ public class BookmarkService {
 
         return BookmarkListResponse.builder()
                 .message("위시리스트 조회를 성공적으로 완료했습니다.")
-                .productList(productList) // 타입 일치 (List<BookmarkListResponse.Product>)
+                .productList(productList)
                 .build();
     }
 }
