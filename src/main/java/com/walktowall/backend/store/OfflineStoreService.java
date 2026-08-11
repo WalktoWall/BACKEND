@@ -29,6 +29,8 @@ public class OfflineStoreService {
                 .storeId(offlineStore.getStoreId())
                 .regionCategory(offlineStore.getRegionCategory())
                 .storeName(offlineStore.getStoreName())
+                .openTime(offlineStore.getOpenTime())
+                .closeTime(offlineStore.getCloseTime())
                 .build();
     }
 }
