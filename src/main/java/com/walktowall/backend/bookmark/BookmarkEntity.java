@@ -3,15 +3,14 @@ package com.walktowall.backend.bookmark;
 import com.walktowall.backend.product.entity.ProductEntity;
 import com.walktowall.backend.user.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "wishlist") // 테이블명은 erd와 동일하게 wishlist로 지정
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class BookmarkEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
