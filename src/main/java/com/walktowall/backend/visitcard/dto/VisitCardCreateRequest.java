@@ -16,14 +16,15 @@ public class VisitCardCreateRequest {
     @NotNull(message = "매장 ID는 필수입니다.")
     private Integer storeId;
 
-    @NotNull(message = "찾는 상품 카테고리는 필수입니다.")
     private Integer findProductCategory;
 
     @NotNull(message = "무드 카테고리는 필수입니다.")
     private Integer moodCategory;
 
+    @NotNull(message = "방문 목적은 필수입니다.")
     private String purposeText;
 
+    @NotNull(message = "방문 예정 시간은 필수입니다.")
     private LocalDateTime visitTime;
 
     @NotNull(message = "직원 응대 상태는 필수입니다.")
