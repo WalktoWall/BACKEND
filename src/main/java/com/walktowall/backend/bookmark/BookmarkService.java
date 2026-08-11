@@ -49,7 +49,7 @@ public class BookmarkService {
         bookmarkRepository.deleteByUser_UserIdAndProduct_ProductId(userId, productId);
     }
 
-    public BookmarkListResponse getMyBookmarks(Integer userId) {
+    public BookmarkListResponse readBookmarks(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
