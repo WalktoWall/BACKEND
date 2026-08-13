@@ -46,6 +46,7 @@ public class VisitCardService {
         OfflineStore offlineStore = offlineStoreRepository.findById(request.getStoreId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다."));
 
+        //aiMood 저장
         String aiMoodResult = generateAiMood(request, offlineStore.getStoreName());
 
         VisitCard visitCard = VisitCard.builder()
@@ -56,7 +57,7 @@ public class VisitCardService {
                 .purposeText(request.getPurposeText())
                 .visitTime(request.getVisitTime())
                 .supportStatus(request.getSupportStatus())
-                .aiMood(aiMoodResult) // AI 연동 전까지는 빈 값
+                .aiMood(aiMoodResult)
                 .build();
 
         VisitCard savedVisitCard = visitCardRepository.save(visitCard);
