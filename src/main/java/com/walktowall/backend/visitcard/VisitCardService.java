@@ -54,6 +54,7 @@ public class VisitCardService {
                 .purposeText(request.getPurposeText())
                 .visitTime(request.getVisitTime())
                 .supportStatus(request.getSupportStatus())
+                .gender(request.getGender()) // [추가] 성별 바인딩
                 .aiMood(null) // AI 연동 전까지는 빈 값
                 .build();
 
@@ -122,6 +123,7 @@ public class VisitCardService {
                 .supportStatus(visitCard.getSupportStatus())
                 .aiMood(visitCard.getAiMood())
                 .createdAt(visitCard.getCreatedAt())
+                .gender(visitCard.getGender()) // [추가] 응답에 성별 포함
                 .build();
     }
 }
