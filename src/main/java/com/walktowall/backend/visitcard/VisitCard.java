@@ -30,7 +30,7 @@ public class VisitCard {
     private OfflineStore offlineStore;
 
     // 추가된 성별 필드
-    @Column(name = "gender")
+    @Column(name = "gender", nullable = false)
     private Integer gender;
 
     // 찾는 상품 카테고리
