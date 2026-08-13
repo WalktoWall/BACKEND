@@ -29,4 +29,8 @@ public class VisitCardCreateRequest {
 
     @NotNull(message = "직원 응대 상태는 필수입니다.")
     private Integer supportStatus;
+
+    // [추가] 성별 필드
+    @NotNull(message = "성별은 필수입니다.")
+    private Integer gender;
 }

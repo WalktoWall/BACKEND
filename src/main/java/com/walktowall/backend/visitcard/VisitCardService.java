@@ -58,6 +58,8 @@ public class VisitCardService {
                 .visitTime(request.getVisitTime())
                 .supportStatus(request.getSupportStatus())
                 .aiMood(aiMoodResult)
+                .gender(request.getGender()) // [추가] 성별 바인딩
+                .aiMood(aiMoodResult)
                 .build();
 
         VisitCard savedVisitCard = visitCardRepository.save(visitCard);
@@ -213,6 +215,7 @@ public class VisitCardService {
                 .supportStatus(visitCard.getSupportStatus())
                 .aiMood(visitCard.getAiMood())
                 .createdAt(visitCard.getCreatedAt())
+                .gender(visitCard.getGender()) // [추가] 응답에 성별 포함
                 .build();
     }
 }
