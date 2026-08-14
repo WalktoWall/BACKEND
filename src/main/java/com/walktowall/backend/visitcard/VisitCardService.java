@@ -15,6 +15,8 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 @Service
 @RequiredArgsConstructor
@@ -198,6 +200,102 @@ public class VisitCardService {
         );
 
         return callOpenAI(finalPrompt).trim();
+    }
+
+    /**
+     * [성별 처리 헬퍼 메서드] - 코드가 위에서부터 읽히도록 상단에 배치
+     * - 성별이 여성(1)이면 '여성존', 남성(2)이면 '남성존'을 1순위로 앞에 붙임
+     * - 기타(3)를 선택한 경우 성별 존을 생략
+     */
+    private List<String> getRouteWithGender(Integer gender, String secondZone, String thirdZone) {
+        List<String> route = new ArrayList<>();
+        if (gender != null) {
+            if (gender == 1) route.add("여성존");
+            else if (gender == 2) route.add("남성존");
+            // gender == 3 (기타)인 경우 성별 존 생략
+        }
+        route.add(secondZone);
+        route.add(thirdZone);
+        return route;
+    }
+
+    /**
+     * [추천 동선 생성 메인 로직]
+     */
+    public List<String> generateRecommendedRoute(VisitCardCreateRequest request) {
+        String purpose = request.getPurposeText() != null ? request.getPurposeText().trim() : "";
+        Integer gender = request.getGender();
+        Integer productCategory = request.getFindProductCategory(); // 1:백팩, 2:토트백, 3:지갑, 4:악세서리
+
+        // 1. 빠른 입력 프리셋 (정해진 문구인 경우) + 관심 상품 카테고리 규칙 반영
+        if (purpose.equals("한 번 구경하러 왔어요.")) {
+            return getRouteWithGender(gender, "가방존", "신상품존");
+        } else if (purpose.equals("신상품을 보고 싶어요.")) {
+            return getRouteWithGender(gender, "신상품존", "라이프스타일존");
+        } else if (purpose.equals("여행갈 때 편하게 쓸 수 있는 가방을 찾고 있어요.")) {
+            return getRouteWithGender(gender, "트래블존", "가방존");
+        } else if (purpose.equals("어느 때나 잘 쓸 수 있는 가방을 찾고 있어요.")) {
+            // [기획 반영] 백팩, 토트백(1,2)은 가방존 분리, 지갑, 악세서리(3,4)는 라이프스타일존/여성존 고려
+            if (productCategory != null && (productCategory == 3 || productCategory == 4)) {
+                List<String> route = new ArrayList<>();
+                if (gender != null && gender == 1) route.add("여성존");
+                route.add("라이프스타일존");
+                route.add("가방존");
+                return route;
+            }
+            return getRouteWithGender(gender, "가방존", "트래블존");
+        }
+
+        // 2. 사용자가 직접 작성한 '자연어'인 경우 -> AI(OpenAI)에게 성별, 카테고리, 목적, 무드까지 힌트로 주고 분석 위임
+        else if (!purpose.isEmpty()) {
+            return callAiToAnalyzeRoute(request);
+        }
+
+        // 3. 아무것도 입력 안 한 경우의 기본 동선
+        return getRouteWithGender(gender, "신상품존", "라이프스타일존");
+    }
+
+    /**
+     * [자연어 분석 AI 연동 메서드]
+     * - 성별, 숫자 카테고리를 텍스트로 변환하고, 무드까지 힌트로 함께 전달
+     */
+    private List<String> callAiToAnalyzeRoute(VisitCardCreateRequest request) {
+        String genderStr = (request.getGender() != null && request.getGender() == 1) ? "여성" :
+                (request.getGender() != null && request.getGender() == 2) ? "남성" : "기타";
+
+        // 앞서 만들어둔 변환 메서드 활용하여 텍스트로 전환
+        String productCategoryStr = convertProductCategory(request.getFindProductCategory());
+        String moodStr = convertMoodCategory(request.getMoodCategory());
+        String purpose = request.getPurposeText();
+
+        String prompt = String.format(
+                "너는 MCM 오프라인 매장의 전문 큐레이터이다. 아래 고객의 방문 정보를 바탕으로 가장 최적의 매장 추천 동선 3개를 순서대로 골라라.\n\n" +
+                        "[고객 방문 정보]\n" +
+                        "- 성별: %s\n" +
+                        "- 관심 상품 카테고리: %s\n" +
+                        "- 오늘의 무드: %s\n" +
+                        "- 쇼핑 목적 (자연어): \"%s\"\n\n" +
+                        "[작성 및 분석 규칙]\n" +
+                        "1. 선택 가능한 존 이름 목록: 여성존, 남성존, 가방존, 라이프스타일존, 신상품존, 트래블존\n" +
+                        "2. 성별 규칙: 성별이 '여성'이면 무조건 첫 번째 존은 '여성존', '남성'이면 '남성존'으로 시작한다. 단, '기타'인 경우 성별 존을 포함하지 않는다.\n" +
+                        "3. 쇼핑 목적 및 키워드 분석 규칙:\n" +
+                        "   - 목적 텍스트나 관심 상품에 '백', '가방', '파우치', '백팩', '토트백' 관련 키워드가 포함되어 있다면 반드시 **'가방존'**을 동선에 포함시킨다.\n" +
+                        "   - 목적 텍스트에 '선물', '지갑', '악세서리' 관련 내용이 있다면 **'라이프스타일존'** 또는 **'여성존'**을 적극 반영한다.\n" +
+                        "   - 목적 텍스트에 '여행', '캐리어', '출장' 등 이동이나 여행 관련 키워드가 있다면 **'트래블존'**을 포함시킨다.\n" +
+                        "   - 목적 텍스트에 '신상', '유행', '트렌드', '구경' 등 새로운 상품 탐색 의미가 있다면 **'신상품존'**을 포함시킨다.\n" +
+                        "4. 무드 힌트 반영: 오늘의 무드('%s')는 고객의 취향을 보여주므로, 전체적인 존의 흐름이 이 무드와 어울리도록 맥락을 고려한다.\n" +
+                        "5. 출력 형식: 부가 설명이나 인사말 없이, 오직 존 이름 3개를 쉼표(,)로만 구분해서 한 줄로 출력하라. (예: 여성존,가방존,신상품존)" +
+                        "6. 최적의 추천 동선 1개만 출력한다.",
+                genderStr, productCategoryStr, moodStr, purpose, moodStr
+        );
+
+        String aiResponse = callOpenAI(prompt);
+
+        try {
+            return Arrays.asList(aiResponse.trim().split(","));
+        } catch (Exception e) {
+            return getRouteWithGender(request.getGender(), "가방존", "신상품존");
+        }
     }
 
     private VisitCardResponse toResponse(VisitCard visitCard) {
