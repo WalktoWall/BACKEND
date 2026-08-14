@@ -25,4 +25,7 @@ public class WallartEntity {
 
     @Column(name = "wallart_img", nullable = false)
     private String wallartImg;
+
+    @Column(name = "wallart_text")
+    private String wallartText;
 }
