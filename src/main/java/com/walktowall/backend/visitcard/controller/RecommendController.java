@@ -1,6 +1,7 @@
 package com.walktowall.backend.visitcard.controller;
 
 import com.walktowall.backend.visitcard.dto.RouteProductResponse;
+import com.walktowall.backend.visitcard.service.RecommendService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/recommend")
 
 public class RecommendController {
-    private final RecommendService recommendService; // 다음 커밋에서 service 파일 생성 예정
+    private final RecommendService recommendService;
 
     @GetMapping("/routes/{visitCardId}")
     public ResponseEntity<RouteProductResponse> getRecommendedProductsByVisitCard(

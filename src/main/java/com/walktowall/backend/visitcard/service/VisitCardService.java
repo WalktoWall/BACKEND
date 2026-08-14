@@ -69,7 +69,6 @@ public class VisitCardService {
                 .supportStatus(request.getSupportStatus())
                 .aiMood(aiMoodResult)
                 .gender(request.getGender()) // [추가] 성별 바인딩
-                .aiMood(aiMoodResult)
                 .recommendedRoute(recommendedRouteString)
                 .build();
 
