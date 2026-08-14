@@ -1,6 +1,7 @@
 package com.walktowall.backend.product.controller;
 
 import com.walktowall.backend.product.dto.ProductDetailResponse;
+import com.walktowall.backend.product.dto.ProductHistoryResponse;
 import com.walktowall.backend.product.dto.RecordProductScanResponse;
 import com.walktowall.backend.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -32,4 +33,12 @@ public class ProductController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-}
+
+    // 상품 스캔 히스토리 조회
+    @GetMapping("/api/products/qr/{visitCardId}")
+    public ResponseEntity<ProductHistoryResponse> getProductHistory
+        (@PathVariable Integer visitCardId) {
+        ProductHistoryResponse response = productService.getProductHistory(visitCardId);
+        return ResponseEntity.ok(response);
+    }
+ }

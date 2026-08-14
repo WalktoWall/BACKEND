@@ -57,6 +57,9 @@ public class VisitCard {
     @Column(name = "ai_mood")
     private String aiMood;
 
+    @Column(name = "recommended_route")
+    private String recommendedRoute; // DB 저장용 (예: "여성존 -> 신상품존 -> 라이프스타일존")
+
     // Visit Card 생성 시각
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
