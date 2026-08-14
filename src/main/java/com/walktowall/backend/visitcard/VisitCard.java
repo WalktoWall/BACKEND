@@ -29,6 +29,10 @@ public class VisitCard {
     @JoinColumn(name = "store_id", nullable = false)
     private OfflineStore offlineStore;
 
+    // 추가된 성별 필드
+    @Column(name = "gender", nullable = false)
+    private Integer gender;
+
     // 찾는 상품 카테고리
     @Column(name = "find_product_category", nullable = true)
     private Integer findProductCategory;
