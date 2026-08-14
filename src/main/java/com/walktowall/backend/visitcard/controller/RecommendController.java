@@ -1,4 +1,4 @@
-package com.walktowall.backend.visitcard;
+package com.walktowall.backend.visitcard.controller;
 
 import com.walktowall.backend.visitcard.dto.RouteProductResponse;
 import lombok.RequiredArgsConstructor;

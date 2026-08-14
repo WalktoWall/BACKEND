@@ -1,9 +1,11 @@
-package com.walktowall.backend.visitcard;
+package com.walktowall.backend.visitcard.service;
 
 import com.walktowall.backend.store.OfflineStore;
 import com.walktowall.backend.store.OfflineStoreRepository;
 import com.walktowall.backend.user.User;
 import com.walktowall.backend.user.UserRepository;
+import com.walktowall.backend.visitcard.VisitCard;
+import com.walktowall.backend.visitcard.VisitCardRepository;
 import com.walktowall.backend.visitcard.dto.VisitCardCreateRequest;
 import com.walktowall.backend.visitcard.dto.VisitCardResponse;
 import lombok.RequiredArgsConstructor;
