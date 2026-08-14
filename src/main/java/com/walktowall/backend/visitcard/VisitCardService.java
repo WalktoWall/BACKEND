@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +52,11 @@ public class VisitCardService {
         //aiMood 저장
         String aiMoodResult = generateAiMood(request, offlineStore.getStoreName());
 
+        // [추가] 1. 추천 동선 리스트 생성 (빠른 입력 또는 AI 분석)
+        List<String> recommendedRouteList = generateRecommendedRoute(request);
+        // [추가] 2. DB 저장용 문자열로 변환 ("여성존 -> 가방존 -> 신상품존")
+        String recommendedRouteString = String.join(" -> ", recommendedRouteList);
+
         VisitCard visitCard = VisitCard.builder()
                 .user(user)
                 .offlineStore(offlineStore)
@@ -62,6 +68,7 @@ public class VisitCardService {
                 .aiMood(aiMoodResult)
                 .gender(request.getGender()) // [추가] 성별 바인딩
                 .aiMood(aiMoodResult)
+                .recommendedRoute(recommendedRouteString)
                 .build();
 
         VisitCard savedVisitCard = visitCardRepository.save(visitCard);
@@ -300,6 +307,13 @@ public class VisitCardService {
 
     private VisitCardResponse toResponse(VisitCard visitCard) {
 
+        List<String> routeList = new ArrayList<>();
+        if (visitCard.getRecommendedRoute() != null && !visitCard.getRecommendedRoute().isEmpty()) {
+            routeList = Arrays.stream(visitCard.getRecommendedRoute().split(" -> "))
+                    .map(String::trim)
+                    .collect(Collectors.toList());
+        }
+
         return VisitCardResponse.builder()
                 .visitCardId(visitCard.getVisitCardId())
                 .userId(visitCard.getUser().getUserId())
@@ -314,6 +328,7 @@ public class VisitCardService {
                 .aiMood(visitCard.getAiMood())
                 .createdAt(visitCard.getCreatedAt())
                 .gender(visitCard.getGender()) // [추가] 응답에 성별 포함
+                .recommendedRoute(routeList)
                 .build();
     }
 }
