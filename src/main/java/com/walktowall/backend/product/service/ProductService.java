@@ -2,6 +2,7 @@ package com.walktowall.backend.product.service;
 
 import com.walktowall.backend.bookmark.BookmarkEntity;
 import com.walktowall.backend.product.dto.ProductDetailResponse;
+import com.walktowall.backend.product.dto.ProductHistoryResponse;
 import com.walktowall.backend.product.dto.RecordProductScanResponse;
 import com.walktowall.backend.product.entity.ProductEntity;
 import com.walktowall.backend.product.entity.ProductScanEntity;
@@ -14,6 +15,8 @@ import com.walktowall.backend.visitcard.VisitCardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -69,4 +72,23 @@ public class ProductService {
                 .message("스캔 상품이 등록되었습니다.")
                 .build();
     }
-}
+
+    public ProductHistoryResponse getProductHistory(Integer visitCardId) {
+        List<ProductScanEntity> productScanList = productScanRepository.findAllByVisitCard_VisitCardId(visitCardId);
+
+        List<ProductHistoryResponse.Product> productList = new ArrayList<>();
+        for (ProductScanEntity p : productScanList) {
+            ProductHistoryResponse.Product product = ProductHistoryResponse.Product
+                    .builder()
+                    .productId(p.getProduct().getProductId())
+                    .productName(p.getProduct().getProductName())
+                    .build();
+            productList.add(product);
+        }
+
+        return ProductHistoryResponse.builder()
+                .message("상품 스캔 히스토리 목록을 성공적으로 불러왔습니다")
+                .productList(productList)
+                .build();
+        }
+    }
