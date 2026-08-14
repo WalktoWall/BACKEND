@@ -35,7 +35,7 @@ public class ProductController {
     }
 
     // 상품 스캔 히스토리 조회
-    @GetMapping("/api/products/qr/{visitCardId}")
+    @GetMapping("/qr/history/{visitCardId}")
     public ResponseEntity<ProductHistoryResponse> getProductHistory
         (@PathVariable Integer visitCardId) {
         ProductHistoryResponse response = productService.getProductHistory(visitCardId);
