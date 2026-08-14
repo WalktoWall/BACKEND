@@ -29,12 +29,8 @@ public class VisitCard {
     @JoinColumn(name = "store_id", nullable = false)
     private OfflineStore offlineStore;
 
-    // 추가된 성별 필드
-    @Column(name = "gender", nullable = false)
-    private Integer gender;
-
     // 찾는 상품 카테고리
-    @Column(name = "find_product_category", nullable = true)
+    @Column(name = "find_product_category", nullable = false)
     private Integer findProductCategory;
 
     // 오늘의 무드 카테고리
@@ -42,11 +38,11 @@ public class VisitCard {
     private Integer moodCategory;
 
     // 방문 목적 또는 자유 입력 내용
-    @Column(name = "purpose_text", nullable = false)
+    @Column(name = "purpose_text")
     private String purposeText;
 
     // 방문 예정 시간
-    @Column(name = "visit_time", nullable = false)
+    @Column(name = "visit_time")
     private LocalDateTime visitTime;
 
     // 직원 응대 희망 여부/상태

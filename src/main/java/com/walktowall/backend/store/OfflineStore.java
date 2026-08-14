@@ -3,7 +3,6 @@ package com.walktowall.backend.store;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import java.time.LocalTime;
 
 @Entity
 @Getter
@@ -21,12 +20,4 @@ public class OfflineStore {
 
     @Column(name = "store_name", nullable = false)
     private String storeName; // 매장 이름
-
-    // 추가: 영업 시작 시간
-    @Column(name = "open_time")
-    private LocalTime openTime;
-
-    // 추가: 영업 종료 시간
-    @Column(name = "close_time")
-    private LocalTime closeTime;
 }
