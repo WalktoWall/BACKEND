@@ -14,21 +14,22 @@ public class ProductEntity {
     @Column(name = "product_id")
     private Integer productId;
 
-    @Column(name = "product_name")
+    @Column(name = "product_name", nullable = false)
     private String productName;
 
-    @Column(name = "product_category")
-    private Integer productCategory; // 1="백팩", 2="토트백", 3="지갑", 4="악세서리"
+    @Column(name = "product_category", nullable = false)
+    private Integer productCategory = 1; // 1="백팩", 2="토트백", 3="지갑", 4="악세서리"
+    // derault는 1
 
-    @Column(name = "product_img")
+    @Column(name = "product_img", nullable = false)
     private String productImg;
 
-    @Column(name = "product_detail") // ERD의 대표 메뉴(여러 메뉴를 하나의 문자열로 저장)
+    @Column(name = "product_detail", nullable = false)
     private String productDetail;
 
-    @Column(name = "stock")
-    private Integer stock;
+    @Column(name = "stock", nullable = false)
+    private Integer stock = 0;
 
-    @Column(name = "location")
+    @Column(name = "location", nullable = false)
     private String location;
 }

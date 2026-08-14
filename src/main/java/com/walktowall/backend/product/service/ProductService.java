@@ -1,8 +1,16 @@
 package com.walktowall.backend.product.service;
 
+import com.walktowall.backend.bookmark.BookmarkEntity;
 import com.walktowall.backend.product.dto.ProductDetailResponse;
+import com.walktowall.backend.product.dto.RecordProductScanResponse;
 import com.walktowall.backend.product.entity.ProductEntity;
+import com.walktowall.backend.product.entity.ProductScanEntity;
 import com.walktowall.backend.product.repository.ProductRepository;
+import com.walktowall.backend.product.repository.ProductScanRepository;
+import com.walktowall.backend.user.User;
+import com.walktowall.backend.user.UserRepository;
+import com.walktowall.backend.visitcard.VisitCard;
+import com.walktowall.backend.visitcard.VisitCardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +20,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProductService {
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
+    private final VisitCardRepository visitCardRepository;
+    private final ProductScanRepository productScanRepository;
 
     public ProductDetailResponse getProductDetail(Integer productId) {
         if (productId == null || productId <= 0)
@@ -27,6 +38,35 @@ public class ProductService {
                 .productId(product.getProductId())
                 .productName(product.getProductDetail())
                 .productImg(product.getProductImg())
+                .build();
+    }
+
+    public RecordProductScanResponse recordProductScan(Integer userId, Integer productId) {
+        if (productId == null || productId <= 0)
+            throw new IllegalArgumentException("productId는 1 이상의 정수 형태여야 합니다.");
+
+        ProductEntity product = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    return new IllegalArgumentException("해당 상품을 찾을 수 없습니다.");
+                });
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        VisitCard visitCard = visitCardRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> {
+                    return new IllegalArgumentException("해당 방문 카드를 찾을 수 없습니다.");
+                });
+
+        ProductScanEntity productScan = ProductScanEntity.builder()
+                .product(product)
+                .visitCard(visitCard)
+                .build();
+
+        productScanRepository.save(productScan);
+
+        return RecordProductScanResponse.builder()
+                .message("스캔 상품이 등록되었습니다.")
                 .build();
     }
 }
