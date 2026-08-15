@@ -13,10 +13,19 @@ import java.util.List;
 public class OfflineStoreService {
     private final OfflineStoreRepository offlineStoreRepository;
 
-    //매장 목록 조회
-    public List<OfflineStoreResponse> getOfflineStores() {
+    // 매장 목록 조회
+    public List<OfflineStoreResponse> getOfflineStores(Integer regionCategory) {
 
-        List<OfflineStore> offlineStores = offlineStoreRepository.findAll();
+        List<OfflineStore> offlineStores;
+
+        // 지역 선택 안 함 → 전체 매장 조회
+        if (regionCategory == null) {
+            offlineStores = offlineStoreRepository.findAll();
+        }
+        // 지역 선택함 → 해당 지역 매장만 조회
+        else {
+            offlineStores = offlineStoreRepository.findByRegionCategory(regionCategory);
+        }
 
         return offlineStores.stream()
                 .map(this::toResponse)
