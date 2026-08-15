@@ -115,7 +115,7 @@ public class RecommendService {
     private List<RouteProductResponse.ProductDto> getAiSelectedProductsForZone(VisitCard visitCard, String zone) {
 
         // 1. 해당 Zone의 상품 후보군 확보
-        List<ProductEntity> products = productRepository.findAllByZone(zone); //productRepository 수정할 예정 생성전이라 오류남
+        List<ProductEntity> products = productRepository.findAllByZone(zone);
 
         List<RouteProductResponse.ProductDto> zoneCandidates =
                 products.stream()

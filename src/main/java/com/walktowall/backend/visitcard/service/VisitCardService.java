@@ -230,6 +230,16 @@ public class VisitCardService {
     /**
      * [추천 동선 생성 메인 로직]
      */
+    private String getNewProductZone(Integer gender) {
+        if (gender != null) {
+            if (gender == 1) return "신상품-여성존";
+            if (gender == 2) return "신상품-남성존";
+        }
+
+        // 기타 성별은 우선 여성/남성 신상품존을 특정할 수 없으므로
+        return "신상품-여성존";
+    }
+
     public List<String> generateRecommendedRoute(VisitCardCreateRequest request) {
         String purpose = request.getPurposeText() != null ? request.getPurposeText().trim() : "";
         Integer gender = request.getGender();
@@ -237,9 +247,9 @@ public class VisitCardService {
 
         // 1. 빠른 입력 프리셋 (정해진 문구인 경우) + 관심 상품 카테고리 규칙 반영
         if (purpose.equals("한 번 구경하러 왔어요.")) {
-            return getRouteWithGender(gender, "가방존", "신상품존");
+            return getRouteWithGender(gender, "가방존", getNewProductZone(gender));
         } else if (purpose.equals("신상품을 보고 싶어요.")) {
-            return getRouteWithGender(gender, "신상품존", "라이프스타일존");
+            return getRouteWithGender(gender, getNewProductZone(gender), "라이프스타일존");
         } else if (purpose.equals("여행갈 때 편하게 쓸 수 있는 가방을 찾고 있어요.")) {
             return getRouteWithGender(gender, "트래블존", "가방존");
         } else if (purpose.equals("어느 때나 잘 쓸 수 있는 가방을 찾고 있어요.")) {
@@ -260,7 +270,7 @@ public class VisitCardService {
         }
 
         // 3. 아무것도 입력 안 한 경우의 기본 동선
-        return getRouteWithGender(gender, "신상품존", "라이프스타일존");
+        return getRouteWithGender(gender, getNewProductZone(gender), "라이프스타일존");
     }
 
     /**
@@ -284,15 +294,15 @@ public class VisitCardService {
                         "- 오늘의 무드: %s\n" +
                         "- 쇼핑 목적 (자연어): \"%s\"\n\n" +
                         "[작성 및 분석 규칙]\n" +
-                        "1. 선택 가능한 존 이름 목록: 여성존, 남성존, 가방존, 라이프스타일존, 신상품존, 트래블존\n" +
+                        "1. 선택 가능한 존 이름 목록: 여성존, 남성존, 가방존, 라이프스타일존, 신상품-여성존, 신상품-남성존, 트래블존\n" +
                         "2. 성별 규칙: 성별이 '여성'이면 무조건 첫 번째 존은 '여성존', '남성'이면 '남성존'으로 시작한다. 단, '기타'인 경우 성별 존을 포함하지 않는다.\n" +
                         "3. 쇼핑 목적 및 키워드 분석 규칙:\n" +
                         "   - 목적 텍스트나 관심 상품에 '백', '가방', '파우치', '백팩', '토트백' 관련 키워드가 포함되어 있다면 반드시 **'가방존'**을 동선에 포함시킨다.\n" +
                         "   - 목적 텍스트에 '선물', '지갑', '악세서리' 관련 내용이 있다면 **'라이프스타일존'** 또는 **'여성존'**을 적극 반영한다.\n" +
                         "   - 목적 텍스트에 '여행', '캐리어', '출장' 등 이동이나 여행 관련 키워드가 있다면 **'트래블존'**을 포함시킨다.\n" +
-                        "   - 목적 텍스트에 '신상', '유행', '트렌드', '구경' 등 새로운 상품 탐색 의미가 있다면 **'신상품존'**을 포함시킨다.\n" +
+                        "   - 목적 텍스트에 '신상', '유행', '트렌드', '구경' 등 새로운 상품 탐색 의미가 있다면 신상품존을 포함시키지만, 성별이 여성이라면 **'신상품-여성존'**, 남성이라면 **'신상품-남성존'**을 사용한다. 성별이 기타라면 신상품 존을 임의로 성별에 맞춰 추측하지 말고, 다른 적합한 존을 우선 고려한다.\n" +
                         "4. 무드 힌트 반영: 오늘의 무드('%s')는 고객의 취향을 보여주므로, 전체적인 존의 흐름이 이 무드와 어울리도록 맥락을 고려한다.\n" +
-                        "5. 출력 형식: 부가 설명이나 인사말 없이, 오직 존 이름 3개를 쉼표(,)로만 구분해서 한 줄로 출력하라. (예: 여성존,가방존,신상품존)" +
+                        "5. 출력 형식: 부가 설명이나 인사말 없이, 오직 존 이름 3개를 쉼표(,)로만 구분해서 한 줄로 출력하라. (예: 여성존,가방존,신상품-여성존)" +
                         "6. 최적의 추천 동선 1개만 출력한다.",
                 genderStr, productCategoryStr, moodStr, purpose, moodStr
         );
