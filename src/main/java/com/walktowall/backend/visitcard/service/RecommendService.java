@@ -542,6 +542,7 @@ public class RecommendService {
                                 zone.getProductList().stream()
                                         .map(product ->
                                                 RecommendProductResponse.ProductDto.builder()
+                                                        .visitCardId(visitCardId)
                                                         .productId(product.getProductId())
                                                         .productImg(product.getProductImg())
                                                         .productZone(zone.getZone())

@@ -14,6 +14,7 @@ public class RecommendProductResponse {
     @Getter
     @Builder
     public static class ProductDto {
+        private Integer visitCardId;
         private Long productId;
         private String productImg;
         private String productZone;
