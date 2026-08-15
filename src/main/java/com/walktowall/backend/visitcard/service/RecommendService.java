@@ -11,6 +11,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import com.walktowall.backend.visitcard.dto.RecommendProductResponse;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -525,5 +526,35 @@ public class RecommendService {
 
 
         return "";
+    }
+
+    public RecommendProductResponse getRecommendedProducts(Integer visitCardId) {
+
+        // 기존 추천 동선 결과 조회
+        RouteProductResponse routeResponse =
+                getRouteProducts(visitCardId, null);
+
+        // Zone별 상품을 하나의 리스트로 변환
+        List<RecommendProductResponse.ProductDto> products =
+                routeResponse.getRecommendedRoutes()
+                        .stream()
+                        .flatMap(zone ->
+                                zone.getProductList().stream()
+                                        .map(product ->
+                                                RecommendProductResponse.ProductDto.builder()
+                                                        .productId(product.getProductId())
+                                                        .productImg(product.getProductImg())
+                                                        .productZone(zone.getZone())
+                                                        .productName(product.getProductName())
+                                                        .productDetail(product.getProductDetail())
+                                                        .build()
+                                        )
+                        )
+                        .limit(9)
+                        .toList();
+
+        return RecommendProductResponse.builder()
+                .productList(products)
+                .build();
     }
 }
