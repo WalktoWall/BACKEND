@@ -4,7 +4,6 @@ import com.walktowall.backend.store.OfflineStore;
 import com.walktowall.backend.store.OfflineStoreRepository;
 import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
-import com.walktowall.backend.wallart.dto.CreateWallartRequest;
 import com.walktowall.backend.wallart.dto.CreateWallartResponse;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Base64;
 
 @Service
 @RequiredArgsConstructor
@@ -51,15 +51,17 @@ public class WallartService {
     private final String UPLOAD_DIR = "uploads/wallarts/";
 
     @Transactional
-    public CreateWallartResponse createWallart(CreateWallartRequest request) {
+    public CreateWallartResponse createWallart(Integer userId) {
+        VisitCard visitCard = visitCardRepository.findFirstByUser_UserIdOrderByCreatedAtDesc(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저의 최근 방문 카드를 찾을 수 없습니다. userId=" + userId));
+
         // 매장 정보
-        Integer storeId = request.getVisitCard().getStoreId();
-        OfflineStore store = offlineStoreRepository.findById(storeId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 매장을 찾을 수 없습니다. id=" + storeId));
+        OfflineStore store = offlineStoreRepository.findById(visitCard.getOfflineStore().getStoreId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 매장을 찾을 수 없습니다. id=" + visitCard.getOfflineStore().getStoreId()));
         String storeName = store.getStoreName();
 
         // 성별 정보
-        Integer gender = request.getVisitCard().getGender();
+        Integer gender = visitCard.getGender();
         String genderStr;
         if (gender == 1) genderStr = "여성";
         else if (gender == 2) genderStr = "남성";
@@ -67,7 +69,7 @@ public class WallartService {
         else genderStr = "확인할 수 없음.";
 
         // 카테고리 정보
-        Integer findProductCategory = request.getVisitCard().getFindProductCategory();
+        Integer findProductCategory = visitCard.getFindProductCategory();
         String productTheme = switch (findProductCategory != null ? findProductCategory : 0) {
             case 1 -> "Backpack";
             case 2 -> "Tote bag";
@@ -77,7 +79,7 @@ public class WallartService {
         };
 
         // 무드 정보
-        Integer moodCategory = request.getVisitCard().getMoodCategory();
+        Integer moodCategory = visitCard.getMoodCategory();
         String moodCategoryStr;
         if(moodCategory == 1) moodCategoryStr = "스트리트";
         else if(moodCategory == 2) moodCategoryStr = "클래식";
@@ -85,13 +87,13 @@ public class WallartService {
         else if(moodCategory == 4) moodCategoryStr = "볼드";
         else if(moodCategory == 5) moodCategoryStr = "미니멀";
         else moodCategoryStr = "알 수 없음.";
-        String aimood = request.getVisitCard().getAiMood();
+        String aimood = visitCard.getAiMood();
 
         // 쇼핑 목적
-        String purposeText = request.getVisitCard().getPurposeText();
+        String purposeText = visitCard.getPurposeText();
 
         // 방문 예정시간
-        LocalDateTime visitTime = request.getVisitCard().getVisitTime();
+        LocalDateTime visitTime = visitCard.getVisitTime();
 
         // 프롬포트
         String prompt = String.format(
@@ -114,10 +116,8 @@ public class WallartService {
         );
 
         // 이미지 생성 API 호출 (생성된 이미지 URL을 반환받음)
-        String tempImageUrl = generateImageOpenAI(prompt);
-        String localSavedPath = downloadAndSaveImage(tempImageUrl, request.getVisitCard().getVisitCardId());
-        VisitCard visitCard = visitCardRepository.findById(request.getVisitCard().getVisitCardId())
-                .orElseThrow(() -> new IllegalArgumentException("해당 방문 카드를 찾을 수 없습니다. id=" + request.getVisitCard().getVisitCardId()));
+        String base64Image = generateImageOpenAI(prompt);
+        String localSavedPath = saveBase64Image(base64Image, visitCard.getVisitCardId());
 
         WallartEntity wallart = WallartEntity.builder()
                         .visitCard(visitCard)
@@ -134,62 +134,99 @@ public class WallartService {
 
     // open ai를 통한 이미지 생성 메소드(이미지 생성 url을 반환, url은 1시간 유효)
     public String generateImageOpenAI(String prompt) {
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
 
-        headers.set("OpenAI-Organization", "org-EhkLz960bCaI2nG16tUlPLjK");
-
         Map<String, Object> requestBody = new HashMap<>();
+
         requestBody.put("model", imageModel);
         requestBody.put("prompt", prompt);
-        requestBody.put("n", 1);
         requestBody.put("size", "1024x1024");
         requestBody.put("quality", "auto");
 
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        HttpEntity<Map<String, Object>> entity =
+                new HttpEntity<>(requestBody, headers);
 
         try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(OPENAI_IMAGE_URL, entity, Map.class);
+            ResponseEntity<Map> response =
+                    restTemplate.postForEntity(
+                            OPENAI_IMAGE_URL,
+                            entity,
+                            Map.class
+                    );
 
             Map<String, Object> responseBody = response.getBody();
-            if (responseBody != null && responseBody.containsKey("data")) {
-                List<Map<String, Object>> dataList = (List<Map<String, Object>>) responseBody.get("data");
-                if (!dataList.isEmpty()) {
-                    return (String) dataList.get(0).get("url");
-                }
+
+            if (responseBody == null) {
+                throw new RuntimeException("OpenAI 응답이 비어 있습니다.");
             }
+
+            System.out.println("OpenAI 이미지 생성 응답: " + responseBody);
+
+            Object dataObject = responseBody.get("data");
+
+            if (!(dataObject instanceof List<?> dataList) || dataList.isEmpty()) {
+                throw new RuntimeException(
+                        "OpenAI 응답에 이미지 데이터가 없습니다. response=" + responseBody
+                );
+            }
+
+            Object firstObject = dataList.get(0);
+
+            if (!(firstObject instanceof Map<?, ?> imageData)) {
+                throw new RuntimeException("OpenAI 이미지 데이터 형식이 올바르지 않습니다.");
+            }
+
+            Object b64Object = imageData.get("b64_json");
+
+            if (b64Object == null) {
+                throw new RuntimeException(
+                        "OpenAI 응답에 b64_json이 없습니다. imageData=" + imageData
+                );
+            }
+
+            return b64Object.toString();
+
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("이미지 생성 중 오류가 발생했습니다.", e);
         }
-        throw new RuntimeException("이미지 URL을 받아오지 못했습니다.");
     }
 
     // OpenAI URL로부터 이미지를 다운로드 받아 로컬 디렉터리에 저장
-    private String downloadAndSaveImage(String imageUrl, Integer visitCardId) {
+    private String saveBase64Image(String base64Image, Integer visitCardId) {
+
         try {
             // 디렉터리가 없으면 생성
             Path uploadPath = Paths.get(UPLOAD_DIR);
+
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
-            // 고유한 파일명 생성 (visitCardId.png)
+            // Base64 디코딩
+            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+
+            // 파일명 생성
             String fileName = visitCardId + ".png";
+
             Path targetPath = uploadPath.resolve(fileName);
 
-            // URL 스트림을 통해 이미지 다운로드 및 로컬 파일로 복사
-            try (InputStream in = new URL(imageUrl).openStream()) {
-                Files.copy(in, targetPath, StandardCopyOption.REPLACE_EXISTING);
-            }
+            // 이미지 저장
+            Files.write(targetPath, imageBytes);
 
-            // 저장된 로컬 상대 경로 또는 절대 경로 반환
-            return targetPath.toString(); // 예: "uploads/wallarts/a1b2c3d4-....png"
+            System.out.println("이미지 저장 완료: " + targetPath);
+
+            return targetPath.toString();
 
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("로컬에 이미지를 저장하는 중 오류가 발생했습니다.", e);
+            throw new RuntimeException(
+                    "Base64 이미지를 로컬에 저장하는 중 오류가 발생했습니다.",
+                    e
+            );
         }
     }
 }
