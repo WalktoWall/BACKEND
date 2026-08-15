@@ -28,4 +28,6 @@ public class WallartEntity {
 
     @Column(name = "wallart_text")
     private String wallartText;
+
+    public void updateWallartImg(String wallartImg) { this.wallartImg = wallartImg; }
 }

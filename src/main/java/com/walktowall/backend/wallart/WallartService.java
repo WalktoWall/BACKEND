@@ -119,13 +119,22 @@ public class WallartService {
         String base64Image = generateImageOpenAI(prompt);
         String localSavedPath = saveBase64Image(base64Image, visitCard.getVisitCardId());
 
-        WallartEntity wallart = WallartEntity.builder()
-                        .visitCard(visitCard)
-                        .wallartImg(localSavedPath)
-                        .build();
-        wallartRepository.save(wallart);
-        System.out.println("로컬에 저장된 이미지 경로: " + localSavedPath);
+        // 기존에 해당 VisitCard로 등록된 Wallart가 있는지 조회
+        Optional<WallartEntity> existingWallart = wallartRepository.findByVisitCard_VisitCardId(visitCard.getVisitCardId());
 
+        WallartEntity wallart;
+        if (existingWallart.isPresent()) {
+            // 이미 존재한다면 이미지 경로 업데이트 (Dirty Checking을 통해 자동 UPDATE 실행)
+            wallart = existingWallart.get();
+            wallart.updateWallartImg(localSavedPath); // 또는 별도로 구현한 update 메서드 호출
+        } else {
+            // 존재하지 않는다면 새로 생성 후 저장 (INSERT)
+            wallart = WallartEntity.builder()
+                    .visitCard(visitCard)
+                    .wallartImg(localSavedPath)
+                    .build();
+            wallartRepository.save(wallart);
+        }
         return CreateWallartResponse.builder()
                 .message("월아트 이미지 생성을 성공하였습니다.")
                 .wallartId(wallart.getWallartId())
@@ -143,7 +152,7 @@ public class WallartService {
 
         requestBody.put("model", imageModel);
         requestBody.put("prompt", prompt);
-        requestBody.put("size", "1024x1024");
+        requestBody.put("size", "1792x1024");
         requestBody.put("quality", "auto");
 
         HttpEntity<Map<String, Object>> entity =
