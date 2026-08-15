@@ -40,6 +40,8 @@ public class OfflineStoreService {
                 .storeName(offlineStore.getStoreName())
                 .openTime(offlineStore.getOpenTime())
                 .closeTime(offlineStore.getCloseTime())
+                .latitude(offlineStore.getLatitude())
+                .longitude(offlineStore.getLongitude())
                 .build();
     }
 }

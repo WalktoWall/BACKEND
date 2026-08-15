@@ -29,4 +29,10 @@ public class OfflineStore {
     // 추가: 영업 종료 시간
     @Column(name = "close_time")
     private LocalTime closeTime;
+
+    @Column(name = "latitude")
+    private Double latitude;  // 위도
+
+    @Column(name = "longitude")
+    private Double longitude; // 경도
 }

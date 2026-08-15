@@ -18,10 +18,10 @@ public class OfflineStoreController {
 
     //오프라인 매장 목록 조회
     @GetMapping
-    public ResponseEntity<List<OfflineStoreResponse>> getOfflineStores(@RequestParam(required = false) Integer regionCategory) {
+    public ResponseEntity<List<OfflineStoreResponse>> getOfflineStores(
+            @RequestParam(required = false) Integer regionCategory) {
 
         List<OfflineStoreResponse> response = offlineStoreService.getOfflineStores(regionCategory);
-
         return ResponseEntity.ok(response);
     }
 }
