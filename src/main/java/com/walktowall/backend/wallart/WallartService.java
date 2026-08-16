@@ -5,6 +5,7 @@ import com.walktowall.backend.store.OfflineStoreRepository;
 import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
 import com.walktowall.backend.wallart.dto.CreateWallartResponse;
+import com.walktowall.backend.wallart.dto.ReadWallartResponse;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -49,6 +50,20 @@ public class WallartService {
 
     // 로컬 이미지 저장 위치
     private final String UPLOAD_DIR = "uploads/wallarts/";
+
+    public ReadWallartResponse ReadWallart(Integer userId) {
+        VisitCard visitCard = visitCardRepository.findFirstByUser_UserIdOrderByCreatedAtDesc(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저의 최근 방문 카드를 찾을 수 없습니다. userId=" + userId));
+
+        Optional<WallartEntity> wallart = wallartRepository.findByVisitCard_VisitCardId(visitCard.getVisitCardId());
+
+        return ReadWallartResponse.builder()
+                .message("월아트 이미지 조회를 성공했습니다.")
+                .wallartId(wallart.get().getWallartId())
+                .wallarImg(wallart.get().getWallartImg())
+                .wallartText(wallart.get().getWallartText())
+                .build();
+    }
 
     @Transactional
     public CreateWallartResponse createWallart(Integer userId) {

@@ -17,7 +17,7 @@ public class WallartController {
     private final WallartService wallartService;
 
     @PostMapping
-    ResponseEntity createWallart() {
+    ResponseEntity createWallart() { // wallart 생성
         Integer userId = 1; // 1번 유저로 고정
         CreateWallartResponse response = wallartService.createWallart(userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
