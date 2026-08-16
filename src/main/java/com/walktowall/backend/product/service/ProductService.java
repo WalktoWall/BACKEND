@@ -3,9 +3,12 @@ package com.walktowall.backend.product.service;
 import com.walktowall.backend.bookmark.BookmarkEntity;
 import com.walktowall.backend.product.dto.ProductDetailResponse;
 import com.walktowall.backend.product.dto.ProductHistoryResponse;
+import com.walktowall.backend.product.dto.ReadBestProductResponse;
 import com.walktowall.backend.product.dto.RecordProductScanResponse;
+import com.walktowall.backend.product.entity.BestProductEntity;
 import com.walktowall.backend.product.entity.ProductEntity;
 import com.walktowall.backend.product.entity.ProductScanEntity;
+import com.walktowall.backend.product.repository.BestProductRepository;
 import com.walktowall.backend.product.repository.ProductRepository;
 import com.walktowall.backend.product.repository.ProductScanRepository;
 import com.walktowall.backend.user.User;
@@ -14,6 +17,7 @@ import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +30,9 @@ public class ProductService {
     private final UserRepository userRepository;
     private final VisitCardRepository visitCardRepository;
     private final ProductScanRepository productScanRepository;
+    private final BestProductRepository bestProductRepository;
 
+    @Transactional
     public ProductDetailResponse getProductDetail(Integer productId) {
         if (productId == null || productId <= 0)
             throw new IllegalArgumentException("productId는 1 이상의 정수 형태여야 합니다.");
@@ -44,6 +50,7 @@ public class ProductService {
                 .build();
     }
 
+    @Transactional
     public RecordProductScanResponse recordProductScan(Integer userId, Integer productId) {
         if (productId == null || productId <= 0)
             throw new IllegalArgumentException("productId는 1 이상의 정수 형태여야 합니다.");
@@ -73,6 +80,7 @@ public class ProductService {
                 .build();
     }
 
+    @Transactional
     public ProductHistoryResponse getProductHistory(Integer visitCardId) {
         List<ProductScanEntity> productScanList = productScanRepository.findAllByVisitCard_VisitCardId(visitCardId);
 
@@ -90,5 +98,23 @@ public class ProductService {
                 .message("상품 스캔 히스토리 목록을 성공적으로 불러왔습니다")
                 .productList(productList)
                 .build();
-        }
     }
+
+    @Transactional
+    public ReadBestProductResponse readBestProduct() {
+        List<BestProductEntity> bestProductEntityList = bestProductRepository.findAll();
+        List<ReadBestProductResponse.BestProduct> bestProductList = new ArrayList<>();
+
+        for(BestProductEntity bP : bestProductEntityList) {
+            ReadBestProductResponse.BestProduct bestProduct
+                    = new ReadBestProductResponse.BestProduct(
+                            bP.getProduct().getProductId(), bP.getProduct().getProductName());
+            bestProductList.add(bestProduct);
+        }
+
+        return ReadBestProductResponse.builder()
+                .message("베스트 상품 조회에 성공했습니다.")
+                .bestProductList(bestProductList)
+                .build();
+    }
+}
