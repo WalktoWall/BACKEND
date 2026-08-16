@@ -1,7 +1,8 @@
-package com.walktowall.backend.visitcard;
+package com.walktowall.backend.visitcard.controller;
 
 import com.walktowall.backend.visitcard.dto.VisitCardCreateRequest;
 import com.walktowall.backend.visitcard.dto.VisitCardResponse;
+import com.walktowall.backend.visitcard.service.VisitCardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

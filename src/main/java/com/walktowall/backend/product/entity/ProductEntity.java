@@ -32,4 +32,7 @@ public class ProductEntity {
 
     @Column(name = "location", nullable = false)
     private String location;
+
+    @Column(name = "zone", nullable = false)
+    private String zone;
 }

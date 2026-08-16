@@ -13,4 +13,6 @@ public class OfflineStoreResponse {
     private String storeName;
     private LocalTime openTime;
     private LocalTime closeTime;
+    private Double latitude;
+    private Double longitude;
 }
