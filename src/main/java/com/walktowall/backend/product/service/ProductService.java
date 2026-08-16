@@ -2,9 +2,12 @@ package com.walktowall.backend.product.service;
 
 import com.walktowall.backend.product.dto.ProductDetailResponse;
 import com.walktowall.backend.product.dto.ProductHistoryResponse;
+import com.walktowall.backend.product.dto.ReadBestProductResponse;
 import com.walktowall.backend.product.dto.RecordProductScanResponse;
+import com.walktowall.backend.product.entity.BestProductEntity;
 import com.walktowall.backend.product.entity.ProductEntity;
 import com.walktowall.backend.product.entity.ProductScanEntity;
+import com.walktowall.backend.product.repository.BestProductRepository;
 import com.walktowall.backend.product.repository.ProductRepository;
 import com.walktowall.backend.product.repository.ProductScanRepository;
 import com.walktowall.backend.user.User;
@@ -28,19 +31,17 @@ public class ProductService {
     private final UserRepository userRepository;
     private final VisitCardRepository visitCardRepository;
     private final ProductScanRepository productScanRepository;
+    private final BestProductRepository bestProductRepository;
 
     // 유사도 계산 객체
     private final JaroWinklerDistance jaroWinkler = new JaroWinklerDistance();
 
-    @Transactional
     public ProductDetailResponse getProductDetail(Integer productId) {
         if (productId == null || productId <= 0)
             throw new IllegalArgumentException("productId는 1 이상의 정수 형태여야 합니다.");
 
         ProductEntity product = productRepository.findById(productId)
-                .orElseThrow(() -> {
-                    return new IllegalArgumentException("해당 상품을 찾을 수 없습니다.");
-                });
+                .orElseThrow(() -> new IllegalArgumentException("해당 상품을 찾을 수 없습니다."));
 
         return ProductDetailResponse.builder()
                 .message("상품 상세 조회에 성공했습니다.")
@@ -56,13 +57,10 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         VisitCard visitCard = visitCardRepository.findByUser_UserId(userId)
-                .orElseThrow(() -> {
-                    return new IllegalArgumentException("해당 방문 카드를 찾을 수 없습니다.");
-                });
+                .orElseThrow(() -> new IllegalArgumentException("해당 방문 카드를 찾을 수 없습니다."));
 
         ProductEntity product = findMostSimilarProduct(productName)
                 .orElseThrow(() -> new IllegalArgumentException("인식된 텍스트와 일치하는 상품을 찾을 수 없습니다."));
-
 
         ProductScanEntity productScan = ProductScanEntity.builder()
                 .product(product)
@@ -76,14 +74,12 @@ public class ProductService {
                 .build();
     }
 
-    @Transactional
     public ProductHistoryResponse getProductHistory(Integer visitCardId) {
         List<ProductScanEntity> productScanList = productScanRepository.findAllByVisitCard_VisitCardId(visitCardId);
 
         List<ProductHistoryResponse.Product> productList = new ArrayList<>();
         for (ProductScanEntity p : productScanList) {
-            ProductHistoryResponse.Product product = ProductHistoryResponse.Product
-                    .builder()
+            ProductHistoryResponse.Product product = ProductHistoryResponse.Product.builder()
                     .productId(p.getProduct().getProductId())
                     .productName(p.getProduct().getProductName())
                     .build();
@@ -94,9 +90,26 @@ public class ProductService {
                 .message("상품 스캔 히스토리 목록을 성공적으로 불러왔습니다")
                 .productList(productList)
                 .build();
+    }
+
+    @Transactional
+    public ReadBestProductResponse readBestProducts() {
+        List<BestProductEntity> bestProductEntityList = bestProductRepository.findAll();
+        List<ReadBestProductResponse.BestProduct> bestProductList = new ArrayList<>();
+
+        for (BestProductEntity bP : bestProductEntityList) {
+            ReadBestProductResponse.BestProduct bestProduct = new ReadBestProductResponse.BestProduct(
+                    bP.getProduct().getProductId(), bP.getProduct().getProductName());
+            bestProductList.add(bestProduct);
         }
 
-     // OCR로 들어온 productName과 가장 유사한 ProductEntity를 탐색
+        return ReadBestProductResponse.builder()
+                .message("베스트 상품 조회에 성공했습니다.")
+                .bestProductList(bestProductList)
+                .build();
+    }
+
+    // OCR로 들어온 productName과 가장 유사한 ProductEntity를 탐색
     private Optional<ProductEntity> findMostSimilarProduct(String rawName) {
         if (rawName == null || rawName.isBlank()) {
             return Optional.empty();
@@ -110,8 +123,8 @@ public class ProductService {
         if (exactMatch.isPresent()) {
             return exactMatch;
         }
+
         // 3. 후보군 추출: 전체 상품을 가져와 메모리에서 비교
-        // (상품 수가 매우 많은 경우 특정 카테고리나 키워드로 후보군을 1차 필터링하는 것이 좋습니다)
         List<ProductEntity> candidates = productRepository.findAll();
 
         ProductEntity bestMatch = null;
@@ -120,7 +133,6 @@ public class ProductService {
         // 4. Jaro-Winkler 알고리즘으로 가장 높은 유사도를 가진 상품 탐색
         for (ProductEntity product : candidates) {
             String cleanedDbName = cleanText(product.getProductName());
-
             double similarity = jaroWinkler.apply(cleanedInput, cleanedDbName);
 
             if (similarity > maxSimilarity) {

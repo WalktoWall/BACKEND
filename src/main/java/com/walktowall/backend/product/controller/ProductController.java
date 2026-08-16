@@ -2,8 +2,9 @@ package com.walktowall.backend.product.controller;
 
 import com.walktowall.backend.product.dto.ProductDetailResponse;
 import com.walktowall.backend.product.dto.ProductHistoryResponse;
-import com.walktowall.backend.product.dto.RecordProductScanRequest;
+import com.walktowall.backend.product.dto.ReadBestProductResponse;
 import com.walktowall.backend.product.dto.RecordProductScanResponse;
+import com.walktowall.backend.product.dto.RecordProductScanRequest;
 import com.walktowall.backend.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,13 @@ public class ProductController {
     public ResponseEntity<ProductHistoryResponse> getProductHistory
         (@PathVariable Integer visitCardId) {
         ProductHistoryResponse response = productService.getProductHistory(visitCardId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 베스트 상품 조회
+    @GetMapping("/best")
+    public ResponseEntity getBestProducts() {
+        ReadBestProductResponse response = productService.readBestProducts();
         return ResponseEntity.ok(response);
     }
  }

@@ -5,6 +5,7 @@ import com.walktowall.backend.store.OfflineStoreRepository;
 import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
 import com.walktowall.backend.wallart.dto.CreateWallartResponse;
+import com.walktowall.backend.wallart.dto.ReadWallartResponse;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -49,6 +50,20 @@ public class WallartService {
 
     // 로컬 이미지 저장 위치
     private final String UPLOAD_DIR = "uploads/wallarts/";
+
+    public ReadWallartResponse ReadWallart(Integer userId) {
+        VisitCard visitCard = visitCardRepository.findFirstByUser_UserIdOrderByCreatedAtDesc(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저의 최근 방문 카드를 찾을 수 없습니다. userId=" + userId));
+
+        Optional<WallartEntity> wallart = wallartRepository.findByVisitCard_VisitCardId(visitCard.getVisitCardId());
+
+        return ReadWallartResponse.builder()
+                .message("월아트 이미지 조회를 성공했습니다.")
+                .wallartId(wallart.get().getWallartId())
+                .wallarImg(wallart.get().getWallartImg())
+                .wallartText(wallart.get().getWallartText())
+                .build();
+    }
 
     @Transactional
     public CreateWallartResponse createWallart(Integer userId) {
@@ -119,13 +134,22 @@ public class WallartService {
         String base64Image = generateImageOpenAI(prompt);
         String localSavedPath = saveBase64Image(base64Image, visitCard.getVisitCardId());
 
-        WallartEntity wallart = WallartEntity.builder()
-                        .visitCard(visitCard)
-                        .wallartImg(localSavedPath)
-                        .build();
-        wallartRepository.save(wallart);
-        System.out.println("로컬에 저장된 이미지 경로: " + localSavedPath);
+        // 기존에 해당 VisitCard로 등록된 Wallart가 있는지 조회
+        Optional<WallartEntity> existingWallart = wallartRepository.findByVisitCard_VisitCardId(visitCard.getVisitCardId());
 
+        WallartEntity wallart;
+        if (existingWallart.isPresent()) {
+            // 이미 존재한다면 이미지 경로 업데이트 (Dirty Checking을 통해 자동 UPDATE 실행)
+            wallart = existingWallart.get();
+            wallart.updateWallartImg(localSavedPath); // 또는 별도로 구현한 update 메서드 호출
+        } else {
+            // 존재하지 않는다면 새로 생성 후 저장 (INSERT)
+            wallart = WallartEntity.builder()
+                    .visitCard(visitCard)
+                    .wallartImg(localSavedPath)
+                    .build();
+            wallartRepository.save(wallart);
+        }
         return CreateWallartResponse.builder()
                 .message("월아트 이미지 생성을 성공하였습니다.")
                 .wallartId(wallart.getWallartId())
@@ -143,7 +167,7 @@ public class WallartService {
 
         requestBody.put("model", imageModel);
         requestBody.put("prompt", prompt);
-        requestBody.put("size", "1024x1024");
+        requestBody.put("size", "1792x1024");
         requestBody.put("quality", "auto");
 
         HttpEntity<Map<String, Object>> entity =
