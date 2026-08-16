@@ -26,7 +26,7 @@ public class ProductController {
     }
 
     // 상품 스캔 등록
-    @PostMapping("/qr/{productId}/scans")
+    @PostMapping("/qr/scans")
     public ResponseEntity<RecordProductScanResponse> addProductScan
         (@RequestBody RecordProductScanRequest request) {
         Integer userId = 1; // 1번 유저로 고정
