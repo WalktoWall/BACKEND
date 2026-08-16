@@ -4,6 +4,8 @@ import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
 import com.walktowall.backend.product.entity.ProductEntity;
 import com.walktowall.backend.product.repository.ProductRepository;
+import com.walktowall.backend.visitcard.RecommendedProductRepository;
+import com.walktowall.backend.visitcard.RecommendedProduct;
 import com.walktowall.backend.visitcard.dto.RouteProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +25,7 @@ public class RecommendService {
 
     private final VisitCardRepository visitCardRepository;
     private final ProductRepository productRepository;
+    private final RecommendedProductRepository recommendedProductRepository;
 
     @Value("${openai.api-key}")
     private String apiKey;
@@ -530,6 +533,9 @@ public class RecommendService {
 
     public RecommendProductResponse getRecommendedProducts(Integer visitCardId) {
 
+        VisitCard visitCard = visitCardRepository.findById(visitCardId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 VisitCard ID입니다: " + visitCardId));
+
         // 기존 추천 동선 결과 조회
         RouteProductResponse routeResponse =
                 getRouteProducts(visitCardId, null);
@@ -553,6 +559,12 @@ public class RecommendService {
                         )
                         .limit(9)
                         .toList();
+
+        List<RecommendedProduct> entities = products.stream()
+                .map(dto -> RecommendedProduct.from(dto, visitCard))
+                .toList();
+
+        recommendedProductRepository.saveAll(entities);
 
         return RecommendProductResponse.builder()
                 .productList(products)

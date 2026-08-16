@@ -1,14 +1,14 @@
 package com.walktowall.backend.staff;
 
-import com.walktowall.backend.product.entity.ProductEntity;
-import com.walktowall.backend.product.repository.ProductRepository;
-import com.walktowall.backend.store.OfflineStore;
 import com.walktowall.backend.staff.dto.StaffCustomerResponse;
 import com.walktowall.backend.staff.dto.StaffProductResponse;
 import com.walktowall.backend.staff.dto.StaffVisitResponse;
+import com.walktowall.backend.visitcard.RecommendedProduct;
+import com.walktowall.backend.visitcard.RecommendedProductRepository;
 import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
 import com.walktowall.backend.visitcard.service.RecommendService;
+import com.walktowall.backend.store.OfflineStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -27,8 +27,7 @@ import java.util.stream.Collectors;
 public class StaffService {
 
     private final VisitCardRepository visitCardRepository;
-    private final ProductRepository productRepository;
-    private final RecommendService recommendService;
+    private final RecommendedProductRepository recommendedProductRepository; // 🌟 추가된 Repository 주입
 
     @Value("${openai.api-key}")
     private String apiKey;
@@ -43,10 +42,6 @@ public class StaffService {
 
 
     // 오늘 방문 예정 고객 목록
-     /*
-     * 같은 사용자가 VisitCard를 여러 개 가지고 있다면
-     * 가장 최신 VisitCard 하나만 사용한다.
-     */
     public List<StaffCustomerResponse> getTodayCustomers() {
 
         LocalDate today = LocalDate.now();
@@ -102,8 +97,8 @@ public class StaffService {
         // 추천 동선
         List<String> recommendedRoute = parseRecommendedRoute(visitCard.getRecommendedRoute());
 
-        // 동선의 각 Zone에서 첫 번째 추천 상품
-        List<StaffProductResponse> startProducts = getStartRecommendedProducts(recommendedRoute);
+        // 🌟 DB에 저장된 추천 상품을 조회하도록 변경
+        List<StaffProductResponse> startProducts = getSavedRecommendedProducts(visitCardId);
 
         // AI 직원 응대 가이드
         String staffGuidance = generateStaffGuidance(visitCard);
@@ -153,32 +148,21 @@ public class StaffService {
     }
 
 
-    // 첫 번째 상품 하나씩 가져온다.
-    private List<StaffProductResponse>
-    getStartRecommendedProducts(List<String> zones) {
-        List<StaffProductResponse> result =
-                new ArrayList<>();
+    // 🌟 DB에 저장되어 있는 추천 상품 리스트를 조회하여 StaffProductResponse로 변환
+    private List<StaffProductResponse> getSavedRecommendedProducts(Integer visitCardId) {
+        List<RecommendedProduct> recommendedProducts =
+                recommendedProductRepository.findByVisitCard_VisitCardId(visitCardId);
 
-        for (String zone : zones) {
-            List<ProductEntity> products = productRepository.findAllByZone(zone);
-
-            if (products.isEmpty()) {
-                continue;
-            }
-
-            ProductEntity product = products.get(0);
-
-            result.add(StaffProductResponse.builder()
-                            .zone(zone)
-                            .productId(product.getProductId().longValue())
-                            .productName(product.getProductName())
-                            .productImg(product.getProductImg())
-                            .productDetail(product.getProductDetail())
-                            .build()
-            );
-        }
-
-        return result;
+        return recommendedProducts.stream()
+                .map(product -> StaffProductResponse.builder()
+                        .zone(product.getProductZone())
+                        .productId(product.getProductId())
+                        .productName(product.getProductName())
+                        .productImg(product.getProductImg())
+                        .productDetail(product.getProductDetail())
+                        .build()
+                )
+                .toList();
     }
 
 
