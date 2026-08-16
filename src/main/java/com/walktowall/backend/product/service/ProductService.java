@@ -101,7 +101,7 @@ public class ProductService {
     }
 
     @Transactional
-    public ReadBestProductResponse readBestProduct() {
+    public ReadBestProductResponse readBestProducts() {
         List<BestProductEntity> bestProductEntityList = bestProductRepository.findAll();
         List<ReadBestProductResponse.BestProduct> bestProductList = new ArrayList<>();
 
