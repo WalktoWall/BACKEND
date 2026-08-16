@@ -4,6 +4,7 @@ import com.walktowall.backend.product.dto.ProductDetailResponse;
 import com.walktowall.backend.product.dto.ProductHistoryResponse;
 import com.walktowall.backend.product.dto.ReadBestProductResponse;
 import com.walktowall.backend.product.dto.RecordProductScanResponse;
+import com.walktowall.backend.product.dto.RecordProductScanRequest;
 import com.walktowall.backend.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,11 +27,11 @@ public class ProductController {
     }
 
     // 상품 스캔 등록
-    @PostMapping("/qr/{productId}/scans")
+    @PostMapping("/qr/scans")
     public ResponseEntity<RecordProductScanResponse> addProductScan
-        (@PathVariable Integer productId) {
+        (@RequestBody RecordProductScanRequest request) {
         Integer userId = 1; // 1번 유저로 고정
-        RecordProductScanResponse response = productService.recordProductScan(userId, productId);
+        RecordProductScanResponse response = productService.recordProductScan(userId, request.getProductName());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
