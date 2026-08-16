@@ -9,7 +9,5 @@ import java.util.Optional;
 @Repository
 public interface ProductRepository extends JpaRepository<ProductEntity, Integer> {
     List<ProductEntity> findAllByZone(String zone);
-    Optional<ProductEntity> findByName(String name);
-
     Optional<ProductEntity> findByProductName(String trim);
 }
