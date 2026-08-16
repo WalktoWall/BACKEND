@@ -7,7 +7,6 @@ import com.walktowall.backend.visitcard.RecommendedProduct;
 import com.walktowall.backend.visitcard.RecommendedProductRepository;
 import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
-import com.walktowall.backend.visitcard.service.RecommendService;
 import com.walktowall.backend.store.OfflineStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +26,7 @@ import java.util.stream.Collectors;
 public class StaffService {
 
     private final VisitCardRepository visitCardRepository;
-    private final RecommendedProductRepository recommendedProductRepository; // 🌟 추가된 Repository 주입
+    private final RecommendedProductRepository recommendedProductRepository; // DB에 저장된 추천 상품 조회용
 
     @Value("${openai.api-key}")
     private String apiKey;
@@ -97,7 +96,7 @@ public class StaffService {
         // 추천 동선
         List<String> recommendedRoute = parseRecommendedRoute(visitCard.getRecommendedRoute());
 
-        // 🌟 DB에 저장된 추천 상품을 조회하도록 변경
+        // DB에 저장된 추천 상품을 조회
         List<StaffProductResponse> startProducts = getSavedRecommendedProducts(visitCardId);
 
         // AI 직원 응대 가이드
@@ -119,6 +118,9 @@ public class StaffService {
                 .staffGuidance(staffGuidance)
                 .build();
     }
+
+
+
 
 
     // 오늘 방문 고객 목록 Response 변환
@@ -148,12 +150,19 @@ public class StaffService {
     }
 
 
-    // 🌟 DB에 저장되어 있는 추천 상품 리스트를 조회하여 StaffProductResponse로 변환
+    // DB에 저장되어 있는 추천 상품 리스트를 조회하여 StaffProductResponse로 변환
     private List<StaffProductResponse> getSavedRecommendedProducts(Integer visitCardId) {
         List<RecommendedProduct> recommendedProducts =
-                recommendedProductRepository.findByVisitCard_VisitCardId(visitCardId);
+                recommendedProductRepository.findByVisitCardId(visitCardId);
 
-        return recommendedProducts.stream()
+        Map<String, RecommendedProduct> firstProductPerZone = recommendedProducts.stream()
+                .collect(Collectors.toMap(
+                        RecommendedProduct::getProductZone, // Key: 존 이름 (예: "남성존", "가방존"...)
+                        product -> product,                 // Value: 상품 객체
+                        (existing, replacement) -> existing // 중복될 경우 기존 것 유지 (먼저 들어온 것)
+                ));
+
+        return firstProductPerZone.values().stream()
                 .map(product -> StaffProductResponse.builder()
                         .zone(product.getProductZone())
                         .productId(product.getProductId())
@@ -210,7 +219,9 @@ public class StaffService {
                 직원이 고객의 Visit Card를 보고 "이 고객에게 어떤 방식으로 다가가야 하는가?" 를 바로 이해할 수 있어야 한다.
                 고객의 정보를 단순히 나열하지 말고, 전체 정보를 하나의 쇼핑 맥락으로 해석하라.
                 특히 쇼핑 목적과 자유 입력 내용을 가장 중요하게 고려하고, 무드와 관심 상품을 함께 활용하라.
-                직원 응대 희망 여부도 고려하되 고객에게 부담스러운 응대를 강요하는 방식으로 작성하지 마라.
+                직원 응대 희망 여부도 고려하되, 고객에게 부담스러운 응대를 강요하는 방식으로 작성하지 마라.
+                직원 응대 희망 상태를 고려한 답변을 하며, 응대 멘트에 간접적으로 반영한다.
+                세번째 문장은 고객 본인이 알 정도로 단순한 정보를 말하기 보단, 고객 입장에서 실제로 프리미엄 대응 서비스를 이용한다는 느낌을 받을 수 있는 응대 멘트로 작성한다. 
 
                 [출력 형식]
 
@@ -233,6 +244,7 @@ public class StaffService {
                 - 상품이나 고객의 특징을 근거 없이 만들어내지 마라.
                 - 고객의 Visit Card에 없는 취향을 단정하지 마라.
                 - 지나치게 판매를 강요하는 표현을 사용하지 마라.
+                - "들었는데" 와 비슷한 무책임한 멘트 스타일을 사용하지 마라.
                 - 실제 MCM 매장 직원이 사용할 수 있을 정도로 자연스럽게 작성하라.
 
                 """,

@@ -45,7 +45,7 @@ public class RecommendedProduct {
                 .visitCard(visitCard)
                 .productId(dto.getProductId())
                 .productImg(dto.getProductImg())
-                .productZone(dto.getProductZone())
+                .productZone(dto.getZone())
                 .productName(dto.getProductName())
                 .productDetail(dto.getProductDetail())
                 .build();

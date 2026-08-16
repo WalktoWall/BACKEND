@@ -551,7 +551,7 @@ public class RecommendService {
                                                         .visitCardId(visitCardId)
                                                         .productId(product.getProductId())
                                                         .productImg(product.getProductImg())
-                                                        .productZone(zone.getZone())
+                                                        .zone(zone.getZone())
                                                         .productName(product.getProductName())
                                                         .productDetail(product.getProductDetail())
                                                         .build()
