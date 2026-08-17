@@ -11,5 +11,5 @@ import java.util.List;
 @Builder
 public class RecommendWallartTextResponse {
     private String message;
-    private List<String> TextList;
+    private List<String> textList;
 }
