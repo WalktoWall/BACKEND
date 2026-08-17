@@ -17,7 +17,7 @@ public class RecommendProductResponse {
         private Integer visitCardId;
         private Long productId;
         private String productImg;
-        private String productZone;
+        private String zone;
         private String productName;
         private String productDetail;
     }

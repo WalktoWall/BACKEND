@@ -2,13 +2,11 @@ package com.walktowall.backend.wallart;
 
 import com.walktowall.backend.visitcard.VisitCard;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
