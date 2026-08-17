@@ -1,7 +1,10 @@
 package com.walktowall.backend.bookmark;
 
 import com.walktowall.backend.bookmark.dto.BookmarkListResponse;
+import com.walktowall.backend.bookmark.dto.CreateBookmarkResponse;
+import com.walktowall.backend.bookmark.dto.DeleteBookmarkResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,16 +21,16 @@ public class BookmarkController {
     }
 
     @PostMapping("/{productId}")
-    public ResponseEntity<String> createBookmark(@PathVariable Integer productId) {
+    public ResponseEntity<CreateBookmarkResponse> createBookmark(@PathVariable Integer productId) {
         Integer userId = 1; // 1번 유저로 고정
-        bookmarkService.createBookmark(userId, productId);
-        return ResponseEntity.ok("위시 상품으로 등록되었습니다.");
+        CreateBookmarkResponse response = bookmarkService.createBookmark(userId, productId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{productId}")
-    public ResponseEntity<String> deleteBookmark(@PathVariable Integer productId) {
+    public ResponseEntity<DeleteBookmarkResponse> deleteBookmark(@PathVariable Integer productId) {
         Integer userId = 1; // 1번 유저로 고정
-        bookmarkService.deleteBookmark(userId, productId);
-        return ResponseEntity.ok("위시 상품이 삭제되었습니다.");
+        DeleteBookmarkResponse response = bookmarkService.deleteBookmark(userId, productId);
+        return ResponseEntity.ok(response);
     }
 }
