@@ -14,6 +14,8 @@ public class VisitCardResponse {
     private Integer userId;
     private String userName;
 
+    private Integer gender; // [추가] 성별 필드
+
     private Integer storeId;
     private String storeName;
 

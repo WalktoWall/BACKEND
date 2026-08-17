@@ -327,24 +327,41 @@ public class VisitCardService {
             routeList = Arrays.stream(visitCard.getRecommendedRoute().split(" -> "))
                     .map(String::trim)
                     .collect(Collectors.toList());
+            return VisitCardResponse.builder()
+                    .visitCardId(visitCard.getVisitCardId())
+                    .userId(visitCard.getUser().getUserId())
+                    .userName(visitCard.getUser().getUserName())
+                    .storeId(visitCard.getOfflineStore().getStoreId())
+                    .storeName(visitCard.getOfflineStore().getStoreName())
+                    .findProductCategory(visitCard.getFindProductCategory())
+                    .moodCategory(visitCard.getMoodCategory())
+                    .purposeText(visitCard.getPurposeText())
+                    .visitTime(visitCard.getVisitTime())
+                    .supportStatus(visitCard.getSupportStatus())
+                    .aiMood(visitCard.getAiMood())
+                    .createdAt(visitCard.getCreatedAt())
+                    .gender(visitCard.getGender()) // [추가] 응답에 성별 포함
+                    .recommendedRoute(routeList)
+                    .build();
+        } else {
+            return VisitCardResponse.builder()
+                    .visitCardId(visitCard.getVisitCardId())
+                    .userId(visitCard.getUser().getUserId())
+                    .userName(visitCard.getUser().getUserName())
+                    .storeId(visitCard.getOfflineStore().getStoreId())
+                    .storeName(visitCard.getOfflineStore().getStoreName())
+                    .findProductCategory(visitCard.getFindProductCategory())
+                    .moodCategory(visitCard.getMoodCategory())
+                    .purposeText(visitCard.getPurposeText())
+                    .visitTime(visitCard.getVisitTime())
+                    .supportStatus(visitCard.getSupportStatus())
+                    .aiMood(visitCard.getAiMood())
+                    .createdAt(visitCard.getCreatedAt())
+                    .gender(visitCard.getGender()) // [추가] 응답에 성별 포함
+                    .recommendedRoute(routeList)
+                    .build();
         }
 
-        return VisitCardResponse.builder()
-                .visitCardId(visitCard.getVisitCardId())
-                .userId(visitCard.getUser().getUserId())
-                .userName(visitCard.getUser().getUserName())
-                .storeId(visitCard.getOfflineStore().getStoreId())
-                .storeName(visitCard.getOfflineStore().getStoreName())
-                .findProductCategory(visitCard.getFindProductCategory())
-                .moodCategory(visitCard.getMoodCategory())
-                .purposeText(visitCard.getPurposeText())
-                .visitTime(visitCard.getVisitTime())
-                .supportStatus(visitCard.getSupportStatus())
-                .aiMood(visitCard.getAiMood())
-                .createdAt(visitCard.getCreatedAt())
-                .gender(visitCard.getGender()) // [추가] 응답에 성별 포함
-                .recommendedRoute(routeList)
-                .build();
     }
 }
 
