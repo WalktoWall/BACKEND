@@ -6,6 +6,7 @@ import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
 import com.walktowall.backend.wallart.dto.CreateWallartResponse;
 import com.walktowall.backend.wallart.dto.ReadWallartResponse;
+import com.walktowall.backend.wallart.dto.RecommendWallartTextResponse;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -16,6 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -42,11 +46,16 @@ public class WallartService {
     @Value("${openai.api-key}")
     private String apiKey;
 
+    @Value("${openai.model}")
+    private String model;
+
     @Value("${openai.image-model}")
     private String imageModel;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
     private final String OPENAI_IMAGE_URL = "https://api.openai.com/v1/images/generations";
+    private final String OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions";
 
     // 로컬 이미지 저장 위치
     private final String UPLOAD_DIR = "uploads/wallarts/";
@@ -154,6 +163,249 @@ public class WallartService {
                 .message("월아트 이미지 생성을 성공하였습니다.")
                 .wallartId(wallart.getWallartId())
                 .build();
+    }
+
+    public RecommendWallartTextResponse recommendWallartText(Integer userId) {
+        VisitCard visitCard = visitCardRepository.findFirstByUser_UserIdOrderByCreatedAtDesc(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저의 최근 방문 카드를 찾을 수 없습니다. userId=" + userId));
+        Optional<WallartEntity> wallart = wallartRepository.findByVisitCard_VisitCardId(visitCard.getVisitCardId());
+
+        // 매장 정보
+        OfflineStore store = offlineStoreRepository.findById(visitCard.getOfflineStore().getStoreId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 매장을 찾을 수 없습니다. id=" + visitCard.getOfflineStore().getStoreId()));
+        String storeName = store.getStoreName();
+
+        // 성별 정보
+        Integer gender = visitCard.getGender();
+        String genderStr;
+        if (gender == 1) genderStr = "여성";
+        else if (gender == 2) genderStr = "남성";
+        else if (gender == 3) genderStr = "사용자가 비공개를 요청함.";
+        else genderStr = "확인할 수 없음.";
+
+        // 카테고리 정보
+        Integer findProductCategory = visitCard.getFindProductCategory();
+        String productTheme = switch (findProductCategory != null ? findProductCategory : 0) {
+            case 1 -> "Backpack";
+            case 2 -> "Tote bag";
+            case 3 -> "Wallet";
+            case 4 -> "Accessories";
+            default -> "Fashion items";
+        };
+
+        // 무드 정보
+        Integer moodCategory = visitCard.getMoodCategory();
+        String moodCategoryStr;
+        if(moodCategory == 1) moodCategoryStr = "스트리트";
+        else if(moodCategory == 2) moodCategoryStr = "클래식";
+        else if(moodCategory == 3) moodCategoryStr = "모던";
+        else if(moodCategory == 4) moodCategoryStr = "볼드";
+        else if(moodCategory == 5) moodCategoryStr = "미니멀";
+        else moodCategoryStr = "알 수 없음.";
+        String aimood = visitCard.getAiMood();
+
+        // 쇼핑 목적
+        String purposeText = visitCard.getPurposeText();
+
+        // 방문 예정시간
+        LocalDateTime visitTime = visitCard.getVisitTime();
+
+        // 프롬포트
+        String prompt = String.format(
+                """
+                MCM 럭셔리 패션 브랜드 매장의 디지털 아트월에 배치할
+                프리미엄 패션 문구 5개를 추천해줘.
+    
+                [고객 정보]
+                - 매장: %s
+                - 오늘의 무드: %s
+                - AI 무드: %s
+                - 고객 성별: %s
+                - 주요 제품: %s
+                - 쇼핑 목적: %s
+                - 방문 시간: %s
+    
+                [문구 생성 기준]
+    
+                반드시 '오늘의 무드'를 가장 중요한 기준으로 사용한다.
+    
+                [스트리트]
+                - 대담하고 즉흥적인 에너지
+                - 도시와 움직임, 자유로운 자기표현
+                - 짧은 명령형 또는 선언형 문장 2개
+                - 두 문장을 마침표로 끊어 리듬감을 줄 것
+                - 영문 기준 12단어 이내
+                - 핵심 어휘: Move, Bold, Rule, Own, Street, Fear Less
+    
+                예시:
+                "Move Bold. Own Your Journey."
+                "Fear Less. Move More."
+    
+                [클래식]
+                - 우아하고 시간을 초월한 정서
+                - 이야기와 유산, 품격의 이미지
+                - 완결된 서술형 한 문장
+                - 부드럽고 자연스럽게 흐르는 구조
+                - 핵심 어휘: Story, Timeless, Carry, Legacy, Grace
+    
+                예시:
+                "A Story Worth Carrying."
+                "Elegance Never Fades."
+    
+                [모던]
+                - 절제되고 미니멀한 감각
+                - 군더더기 없는 세련된 표현
+                - A, B 형태의 짧은 대구 구조
+                - 쉼표를 활용하여 대비를 강조
+                - 핵심 어휘: Simple, Clean, Clear, Less, Structured
+    
+                예시:
+                "Less Noise, More You."
+                "Clean Lines, Clear Mind."
+    
+                [볼드]
+                - 강렬한 확신과 자기표현
+                - 짧고 강한 단언형 문장
+                - 단어 수를 최소화하여 임팩트를 극대화
+                - 핵심 어휘: Unapologetic, Bold, Own, Statement, Loud
+    
+                예시:
+                "Unapologetically You."
+                "Bold Moves Only."
+    
+                [목적에 따른 보정]
+                쇼핑 목적이 선물과 관련된 경우
+                '전하다', '간직하다', '특별한 순간'의 의미가 자연스럽게 드러나도록
+                Carry, Keep, Give, Moment 등의 어휘를 적절히 활용한다.
+    
+                [제품에 따른 보정]
+                제품명을 직접적으로 반복하지 않는다.
+                해당 제품의 실루엣, 스타일, 움직임 또는 소유의 의미를
+                문구에 자연스럽게 반영한다.
+    
+                [브랜드 톤]
+                MCM의 럭셔리 패션 브랜드 이미지에 어울리는
+                세련되고 현대적인 캠페인 카피처럼 작성한다.
+                지나치게 상업적인 광고 문구는 피한다.
+    
+                [출력 규칙]
+                - 반드시 정확히 5개의 문구를 생성한다.
+                - 모든 문구는 영어로 작성한다.
+                - 5개 문구는 서로 다른 표현을 사용한다.
+                - 문법적으로 자연스러워야 한다.
+                - 문구 앞뒤에 따옴표를 붙이지 않는다.
+                - 설명이나 번호를 포함하지 않는다.
+                - 반드시 JSON 배열 하나만 반환한다.
+    
+                반환 형식:
+                ["문구1", "문구2", "문구3", "문구4", "문구5"]
+                """,
+                storeName,
+                moodCategoryStr,
+                aimood,
+                genderStr,
+                productTheme,
+                purposeText,
+                visitTime != null
+                        ? visitTime.getHour() + "시"
+                        : "현재 시간대"
+        );
+
+        List<String> phrases = generateTextOpenAI(prompt);
+
+        return RecommendWallartTextResponse.builder()
+                .message("월아트 문구 추천 조회에 성공했습니다.")
+                .textList(phrases)
+                .build();
+    }
+
+    private List<String> parsePhrases(String response) {
+
+        try {
+            return objectMapper.readValue(
+                    response,
+                    new TypeReference<List<String>>() {}
+            );
+
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "AI 문구 응답 파싱에 실패했습니다. response=" + response,
+                    e
+            );
+        }
+    }
+
+
+    public List<String> generateTextOpenAI(String prompt) {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(apiKey);
+
+        Map<String, Object> requestBody = new HashMap<>();
+
+        requestBody.put("model", model);
+
+        requestBody.put(
+                "messages",
+                List.of(
+                        Map.of(
+                                "role", "system",
+                                "content",
+                                "당신은 MCM 럭셔리 패션 브랜드의 캠페인 카피라이터입니다. " +
+                                        "사용자가 제공한 무드와 조건을 바탕으로 세련된 영문 패션 문구를 작성합니다."
+                        ),
+                        Map.of(
+                                "role", "user",
+                                "content", prompt
+                        )
+                )
+        );
+
+        requestBody.put("temperature", 0.9);
+
+        HttpEntity<Map<String, Object>> entity =
+                new HttpEntity<>(requestBody, headers);
+
+        try {
+            ResponseEntity<Map> response =
+                    restTemplate.postForEntity(
+                            OPENAI_CHAT_URL,
+                            entity,
+                            Map.class
+                    );
+
+            Map<String, Object> responseBody = response.getBody();
+
+            if (responseBody == null) {
+                throw new RuntimeException("OpenAI 응답이 비어 있습니다.");
+            }
+
+            List<Map<String, Object>> choices =
+                    (List<Map<String, Object>>) responseBody.get("choices");
+
+            if (choices == null || choices.isEmpty()) {
+                throw new RuntimeException(
+                        "OpenAI 응답에 choices가 없습니다."
+                );
+            }
+
+            Map<String, Object> firstChoice = choices.get(0);
+
+            Map<String, Object> message =
+                    (Map<String, Object>) firstChoice.get("message");
+
+            String content = message.get("content").toString();
+
+            return parsePhrases(content);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(
+                    "문구 생성 중 오류가 발생했습니다.",
+                    e
+            );
+        }
     }
 
     // open ai를 통한 이미지 생성 메소드(이미지 생성 url을 반환, url은 1시간 유효)
