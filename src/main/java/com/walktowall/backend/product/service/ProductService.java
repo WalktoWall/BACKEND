@@ -56,7 +56,7 @@ public class ProductService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-        VisitCard visitCard = visitCardRepository.findByUser_UserId(userId)
+        VisitCard visitCard = visitCardRepository.findFirstByUser_UserIdOrderByCreatedAtDesc(userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 방문 카드를 찾을 수 없습니다."));
 
         ProductEntity product = findMostSimilarProduct(productName)
@@ -74,8 +74,15 @@ public class ProductService {
                 .build();
     }
 
-    public ProductHistoryResponse getProductHistory(Integer visitCardId) {
-        List<ProductScanEntity> productScanList = productScanRepository.findAllByVisitCard_VisitCardId(visitCardId);
+    @Transactional(readOnly = true)
+    public ProductHistoryResponse getProductHistory(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        VisitCard visitCard = visitCardRepository.findFirstByUser_UserIdOrderByCreatedAtDesc(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 방문 카드를 찾을 수 없습니다."));
+
+        List<ProductScanEntity> productScanList = productScanRepository.findAllByVisitCard_VisitCardId(visitCard.getVisitCardId());
 
         List<ProductHistoryResponse.Product> productList = new ArrayList<>();
         for (ProductScanEntity p : productScanList) {

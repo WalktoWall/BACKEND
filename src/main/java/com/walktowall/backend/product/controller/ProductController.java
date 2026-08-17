@@ -37,10 +37,10 @@ public class ProductController {
     }
 
     // 상품 스캔 히스토리 조회
-    @GetMapping("/qr/history/{visitCardId}")
-    public ResponseEntity<ProductHistoryResponse> getProductHistory
-        (@PathVariable Integer visitCardId) {
-        ProductHistoryResponse response = productService.getProductHistory(visitCardId);
+    @GetMapping("/qr/history")
+    public ResponseEntity<ProductHistoryResponse> getProductHistory() {
+        Integer userId = 1; // 1번 유저로 고정
+        ProductHistoryResponse response = productService.getProductHistory(userId);
         return ResponseEntity.ok(response);
     }
 
