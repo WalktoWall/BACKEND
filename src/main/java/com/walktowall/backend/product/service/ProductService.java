@@ -122,22 +122,31 @@ public class ProductService {
             return Optional.empty();
         }
 
-        // 1. OCR 텍스트 전처리 (공백 및 특수문자 제거, 대문자 변환)
         String cleanedInput = cleanText(rawName);
 
-        // 2. DB에서 원본 이름으로 완전 일치하는 상품 먼저 탐색 (성능 최적화)
+        // 1. DB 원본 완전히 일치하는 경우 (최우선)
         Optional<ProductEntity> exactMatch = productRepository.findByProductName(rawName.trim());
         if (exactMatch.isPresent()) {
             return exactMatch;
         }
 
-        // 3. 후보군 추출: 전체 상품을 가져와 메모리에서 비교
         List<ProductEntity> candidates = productRepository.findAll();
 
+        // 2. 입력 텍스트가 DB 상품명에 포함되거나, DB 상품명이 입력 텍스트에 포함되는 경우 (2순위)
+        // 예: "Aren 비세토스 E/W 숄더" <-> "Aren 비세토스 E/W 숄더백"
+        for (ProductEntity product : candidates) {
+            String cleanedDbName = cleanText(product.getProductName());
+            if (!cleanedInput.isEmpty() && !cleanedDbName.isEmpty()) {
+                if (cleanedDbName.contains(cleanedInput) || cleanedInput.contains(cleanedDbName)) {
+                    return Optional.of(product);
+                }
+            }
+        }
+
+        // 3. 포함 관계가 없을 때만 유사도(Jaro-Winkler) 비교 진행 (3순위)
         ProductEntity bestMatch = null;
         double maxSimilarity = -1.0;
 
-        // 4. Jaro-Winkler 알고리즘으로 가장 높은 유사도를 가진 상품 탐색
         for (ProductEntity product : candidates) {
             String cleanedDbName = cleanText(product.getProductName());
             double similarity = jaroWinkler.apply(cleanedInput, cleanedDbName);
@@ -148,8 +157,8 @@ public class ProductService {
             }
         }
 
-        // 5. 유사도 임계값(Threshold) 검증 (0.6 미만이면 엉뚱한 상품 매칭 방지)
-        double THRESHOLD = 0.60;
+        // 임계값을 0.75~0.8 정도로 높여 엉뚱한 상품 매칭 방지
+        double THRESHOLD = 0.75;
         if (maxSimilarity >= THRESHOLD) {
             return Optional.ofNullable(bestMatch);
         }
