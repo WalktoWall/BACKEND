@@ -5,6 +5,7 @@ import com.walktowall.backend.store.OfflineStoreRepository;
 import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
 import com.walktowall.backend.wallart.dto.CreateWallartResponse;
+import com.walktowall.backend.wallart.dto.EditWallartTextResponse;
 import com.walktowall.backend.wallart.dto.ReadWallartResponse;
 import com.walktowall.backend.wallart.dto.RecommendWallartTextResponse;
 import org.springframework.http.HttpEntity;
@@ -317,6 +318,18 @@ public class WallartService {
                 .message("월아트 문구 추천 조회에 성공했습니다.")
                 .textList(phrases)
                 .build();
+    }
+
+    @Transactional
+    public EditWallartTextResponse updateWallartText(Integer userId, String text) {
+        VisitCard visitCard = visitCardRepository.findFirstByUser_UserIdOrderByCreatedAtDesc(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저의 최근 방문 카드를 찾을 수 없습니다. userId=" + userId));
+
+        WallartEntity wallart = wallartRepository.findByVisitCard_VisitCardId(visitCard.getVisitCardId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 방문 카드의 월아트를 찾을 수 없습니다. visitCardId=" + visitCard.getVisitCardId()));
+        wallart.setWallartText(text);
+
+        return new EditWallartTextResponse("월아트 문구 수정을 성공하였습니다.");
     }
 
     private List<String> parsePhrases(String response) {
