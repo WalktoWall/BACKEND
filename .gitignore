@@ -53,3 +53,6 @@ src/main/resources/application-secret.properties
 src/main/resources/application-local.yml
 src/main/resources/application-local.properties
 .env
+
+### 생성 이미지 폴더
+/uploads/

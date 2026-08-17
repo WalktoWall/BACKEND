@@ -1,0 +1,47 @@
+package com.walktowall.backend.wallart;
+
+import com.walktowall.backend.visitcard.VisitCard;
+import com.walktowall.backend.wallart.dto.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/wall-art")
+public class WallartController {
+    private final WallartService wallartService;
+
+    @PostMapping
+    ResponseEntity createWallart() { // wallart 생성
+        Integer userId = 1; // 1번 유저로 고정
+        CreateWallartResponse response = wallartService.createWallart(userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping
+    ResponseEntity readWallart() {
+        Integer userId = 1; // 1번 유저로 고정
+        ReadWallartResponse response = wallartService.ReadWallart(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping
+    ResponseEntity updateWallartText(@RequestBody EditWallartTextRequest request) {
+        Integer userId = 1; // 1번 유저로 고정
+        EditWallartTextResponse response = wallartService.updateWallartText(userId, request.getText());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/text-recommendation")
+    ResponseEntity recommendWallartText() {
+        Integer userId = 1;
+        RecommendWallartTextResponse response = wallartService.recommendWallartText(userId);
+        return ResponseEntity.ok(response);
+    }
+
+
+}

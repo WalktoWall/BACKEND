@@ -20,4 +20,18 @@ public class OfflineStore {
 
     @Column(name = "store_name", nullable = false)
     private String storeName; // 매장 이름
+
+    // 추가: 영업 시작 시간
+    @Column(name = "open_time")
+    private LocalTime openTime;
+
+    // 추가: 영업 종료 시간
+    @Column(name = "close_time")
+    private LocalTime closeTime;
+
+    @Column(name = "latitude")
+    private Double latitude;  // 위도
+
+    @Column(name = "longitude")
+    private Double longitude; // 경도
 }

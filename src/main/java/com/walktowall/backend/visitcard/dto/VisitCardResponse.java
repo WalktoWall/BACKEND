@@ -2,6 +2,7 @@ package com.walktowall.backend.visitcard.dto;
 
 import lombok.Builder;
 import lombok.Getter;
+import java.util.List;
 
 import java.time.LocalDateTime;
 
@@ -23,5 +24,6 @@ public class VisitCardResponse {
     private Integer supportStatus;
 
     private String aiMood;
+    private List<String> recommendedRoute;
     private LocalDateTime createdAt;
 }
