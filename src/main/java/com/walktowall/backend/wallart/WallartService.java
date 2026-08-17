@@ -5,6 +5,7 @@ import com.walktowall.backend.store.OfflineStoreRepository;
 import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
 import com.walktowall.backend.wallart.dto.CreateWallartResponse;
+import com.walktowall.backend.wallart.dto.EditWallartTextResponse;
 import com.walktowall.backend.wallart.dto.ReadWallartResponse;
 import com.walktowall.backend.wallart.dto.RecommendWallartTextResponse;
 import org.springframework.http.HttpEntity;
@@ -143,6 +144,107 @@ public class WallartService {
         String base64Image = generateImageOpenAI(prompt);
         String localSavedPath = saveBase64Image(base64Image, visitCard.getVisitCardId());
 
+        String prompt2 = String.format(
+                """
+                MCM 럭셔리 패션 브랜드 매장의 디지털 아트월에 배치할
+                프리미엄 패션 문구 1개를 추천해줘.
+    
+                [고객 정보]
+                - 매장: %s
+                - 오늘의 무드: %s
+                - AI 무드: %s
+                - 고객 성별: %s
+                - 주요 제품: %s
+                - 쇼핑 목적: %s
+                - 방문 시간: %s
+    
+                [문구 생성 기준]
+    
+                반드시 '오늘의 무드'를 가장 중요한 기준으로 사용한다.
+    
+                [스트리트]
+                - 대담하고 즉흥적인 에너지
+                - 도시와 움직임, 자유로운 자기표현
+                - 짧은 명령형 또는 선언형 문장 2개
+                - 두 문장을 마침표로 끊어 리듬감을 줄 것
+                - 영문 기준 12단어 이내
+                - 핵심 어휘: Move, Bold, Rule, Own, Street, Fear Less
+    
+                예시:
+                "Move Bold. Own Your Journey."
+                "Fear Less. Move More."
+    
+                [클래식]
+                - 우아하고 시간을 초월한 정서
+                - 이야기와 유산, 품격의 이미지
+                - 완결된 서술형 한 문장
+                - 부드럽고 자연스럽게 흐르는 구조
+                - 핵심 어휘: Story, Timeless, Carry, Legacy, Grace
+    
+                예시:
+                "A Story Worth Carrying."
+                "Elegance Never Fades."
+    
+                [모던]
+                - 절제되고 미니멀한 감각
+                - 군더더기 없는 세련된 표현
+                - A, B 형태의 짧은 대구 구조
+                - 쉼표를 활용하여 대비를 강조
+                - 핵심 어휘: Simple, Clean, Clear, Less, Structured
+    
+                예시:
+                "Less Noise, More You."
+                "Clean Lines, Clear Mind."
+    
+                [볼드]
+                - 강렬한 확신과 자기표현
+                - 짧고 강한 단언형 문장
+                - 단어 수를 최소화하여 임팩트를 극대화
+                - 핵심 어휘: Unapologetic, Bold, Own, Statement, Loud
+    
+                예시:
+                "Unapologetically You."
+                "Bold Moves Only."
+    
+                [목적에 따른 보정]
+                쇼핑 목적이 선물과 관련된 경우
+                '전하다', '간직하다', '특별한 순간'의 의미가 자연스럽게 드러나도록
+                Carry, Keep, Give, Moment 등의 어휘를 적절히 활용한다.
+    
+                [제품에 따른 보정]
+                제품명을 직접적으로 반복하지 않는다.
+                해당 제품의 실루엣, 스타일, 움직임 또는 소유의 의미를
+                문구에 자연스럽게 반영한다.
+    
+                [브랜드 톤]
+                MCM의 럭셔리 패션 브랜드 이미지에 어울리는
+                세련되고 현대적인 캠페인 카피처럼 작성한다.
+                지나치게 상업적인 광고 문구는 피한다.
+    
+                [출력 규칙]
+                - 반드시 정확히 1개의 문구를 생성한다.
+                - 문구는 영어로 작성한다.
+                - 문법적으로 자연스러워야 한다.
+                - 문구 앞뒤에 따옴표를 붙이지 않는다.
+                - 설명이나 번호를 포함하지 않는다.
+                - 반드시 JSON 배열 하나만 반환한다.
+    
+                반환 형식:
+                ["문구1"]
+                """,
+                storeName,
+                moodCategoryStr,
+                aimood,
+                genderStr,
+                productTheme,
+                purposeText,
+                visitTime != null
+                        ? visitTime.getHour() + "시"
+                        : "현재 시간대"
+        );
+
+        List<String> phrases = generateTextOpenAI(prompt2);
+
         // 기존에 해당 VisitCard로 등록된 Wallart가 있는지 조회
         Optional<WallartEntity> existingWallart = wallartRepository.findByVisitCard_VisitCardId(visitCard.getVisitCardId());
 
@@ -156,6 +258,7 @@ public class WallartService {
             wallart = WallartEntity.builder()
                     .visitCard(visitCard)
                     .wallartImg(localSavedPath)
+                    .wallartText(phrases.get(0))
                     .build();
             wallartRepository.save(wallart);
         }
@@ -317,6 +420,18 @@ public class WallartService {
                 .message("월아트 문구 추천 조회에 성공했습니다.")
                 .textList(phrases)
                 .build();
+    }
+
+    @Transactional
+    public EditWallartTextResponse updateWallartText(Integer userId, String text) {
+        VisitCard visitCard = visitCardRepository.findFirstByUser_UserIdOrderByCreatedAtDesc(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저의 최근 방문 카드를 찾을 수 없습니다. userId=" + userId));
+
+        WallartEntity wallart = wallartRepository.findByVisitCard_VisitCardId(visitCard.getVisitCardId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 방문 카드의 월아트를 찾을 수 없습니다. visitCardId=" + visitCard.getVisitCardId()));
+        wallart.setWallartText(text);
+
+        return new EditWallartTextResponse("월아트 문구 수정을 성공하였습니다.");
     }
 
     private List<String> parsePhrases(String response) {
