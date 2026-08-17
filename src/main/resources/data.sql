@@ -1,13 +1,10 @@
 -- 유저 더미 데이터
 INSERT INTO users (user_id, user_name) VALUES
-                                           (1, '김재민'),
+                                           (1, 'WWW'),
                                            (2, '박지우'),
                                            (3, '이서준'),
                                            (4, '정도윤'),
                                            (5, '최유진');
-
-
-
 
 -- 매장 더미 데이터
 INSERT INTO offline_stores
@@ -25,12 +22,13 @@ VALUES
     (10, 4, 'MCM 롯데백화점 대구점', '10:30', '20:30', 35.87605699, 128.5955651),
     (11, 4, 'MCM 롯데백화점 광주점', '10:30', '20:30', 35.15462285, 126.9118181);
 
-
+-- visit card 더미 데이터
 INSERT INTO visit_cards
 (user_id, store_id, gender, find_product_category, mood_category,
  purpose_text, visit_time, support_status, ai_mood, recommended_route, created_at)
 VALUES
 
+-- 1번 유저는 시연용으로 사용 = 임시 visit card
 -- 1. 여성 / 백팩 / 클래식 / 응대 희망
 (1, 1, 2, 1, 2,
  '신상품을 보고 싶어요.',
