@@ -256,7 +256,11 @@ public class VisitCardService {
             // [기획 반영] 백팩, 토트백(1,2)은 가방존 분리, 지갑, 악세서리(3,4)는 라이프스타일존/여성존 고려
             if (productCategory != null && (productCategory == 3 || productCategory == 4)) {
                 List<String> route = new ArrayList<>();
-                if (gender != null && gender == 1) route.add("여성존");
+                if (gender != null && gender == 1) {
+                    route.add("여성존");
+                } else if (gender != null && gender == 2) {
+                    route.add("남성존");
+                }
                 route.add("라이프스타일존");
                 route.add("가방존");
                 return route;
