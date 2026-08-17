@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface VisitCardRepository extends JpaRepository<VisitCard, Integer> {
-    Optional<VisitCard> findByUser_UserId(Integer userId);
     Optional<VisitCard> findFirstByUser_UserIdOrderByCreatedAtDesc(Integer userId);
     List<VisitCard> findByVisitTimeBetween(
             LocalDateTime start,
