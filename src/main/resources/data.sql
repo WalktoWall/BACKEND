@@ -495,3 +495,10 @@ VALUES
      'https://images.mcmworldwide.com/i/mcmworldwide/MMRGATA05BK001_01/aren-black-s?$w1500$&fmt=auto&qlt=default',
      '다이아몬드 퀼팅과 로고 브라스 플레이트로 클래식함을 더한 나파 가죽 크로스바디 백',
      2, '1F 가방 - 토트/숄더백 존');
+
+INSERT INTO best_products (product_id) VALUES
+                                           (1),
+                                           (13),
+                                           (23),
+                                           (41),
+                                           (51);
