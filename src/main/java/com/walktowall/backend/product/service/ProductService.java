@@ -1,5 +1,7 @@
 package com.walktowall.backend.product.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.walktowall.backend.product.dto.ProductDetailResponse;
 import com.walktowall.backend.product.dto.ProductHistoryResponse;
 import com.walktowall.backend.product.dto.ReadBestProductResponse;
@@ -15,13 +17,20 @@ import com.walktowall.backend.user.UserRepository;
 import com.walktowall.backend.visitcard.VisitCard;
 import com.walktowall.backend.visitcard.VisitCardRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.text.similarity.JaroWinklerDistance;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,8 +42,14 @@ public class ProductService {
     private final ProductScanRepository productScanRepository;
     private final BestProductRepository bestProductRepository;
 
-    // 유사도 계산 객체
-    private final JaroWinklerDistance jaroWinkler = new JaroWinklerDistance();
+    @Value("${openai.api-key}")
+    private String openAiApiKey;
+
+    @Value("${openai.model:gpt-4.1-mini}")
+    private String openAiModel;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ProductDetailResponse getProductDetail(Integer productId) {
         if (productId == null || productId <= 0)
@@ -116,59 +131,64 @@ public class ProductService {
                 .build();
     }
 
-    // OCR로 들어온 productName과 가장 유사한 ProductEntity를 탐색
+    /**
+     * OpenAI API를 호출하여 입력받은 productName과 가장 유사한 상품을 DB에서 탐색합니다.
+     */
     private Optional<ProductEntity> findMostSimilarProduct(String rawName) {
         if (rawName == null || rawName.isBlank()) {
             return Optional.empty();
         }
 
-        String cleanedInput = cleanText(rawName);
-
-        // 1. DB 원본 완전히 일치하는 경우 (최우선)
-        Optional<ProductEntity> exactMatch = productRepository.findByProductName(rawName.trim());
-        if (exactMatch.isPresent()) {
-            return exactMatch;
+        List<ProductEntity> allProducts = productRepository.findAll();
+        if (allProducts.isEmpty()) {
+            return Optional.empty();
         }
 
-        List<ProductEntity> candidates = productRepository.findAll();
+        // DB 전체 상품 목록을 AI 프롬프트용 텍스트 형태로 변환
+        String productListPrompt = allProducts.stream()
+                .map(p -> String.format("ID: %d | Name: %s", p.getProductId(), p.getProductName()))
+                .collect(Collectors.joining("\n"));
 
-        // 2. 입력 텍스트가 DB 상품명에 포함되거나, DB 상품명이 입력 텍스트에 포함되는 경우 (2순위)
-        // 예: "Aren 비세토스 E/W 숄더" <-> "Aren 비세토스 E/W 숄더백"
-        for (ProductEntity product : candidates) {
-            String cleanedDbName = cleanText(product.getProductName());
-            if (!cleanedInput.isEmpty() && !cleanedDbName.isEmpty()) {
-                if (cleanedDbName.contains(cleanedInput) || cleanedInput.contains(cleanedDbName)) {
-                    return Optional.of(product);
-                }
+        String systemPrompt = "너는 쇼핑몰의 상품 검색 AI 시스템이다. " +
+                "사용자가 입력하거나 OCR로 인식한 텍스트와 제공된 상품 목록 중 가장 유사한 상품 1개를 찾아라.\n" +
+                "예를 들어 사용자가 입력한 텍스트가 \"OTTOMARCLoOI 다이아몬드 HE 레더 위켄더\"이면 db에서 가장 유사한 상품은 OTTOMAR 다이아몬드 퀼팅 레더 위켄더이다."+
+                "유사해보이는 것이라 판단했을 때 바로 반환하지 말고 db의 데이터를 전부 비교해봐라"+
+                "응답은 오직 JSON 형태로만 응답해야 하며 다른 설명은 포함하지 마라. 예: {\"productId\": 1}\n" +
+                "만약 입력 텍스트와 연관성이 전혀 없는 경우 {\"productId\": null}로 응답해라.";
+
+        String userPrompt = String.format("입력 텍스트: \"%s\"\n\n[상품 목록]\n%s", rawName, productListPrompt);
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(openAiApiKey);
+
+            List<Map<String, String>> messages = List.of(
+                    Map.of("role", "system", "content", systemPrompt),
+                    Map.of("role", "user", "content", userPrompt)
+            );
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", openAiModel);
+            requestBody.put("messages", messages);
+            requestBody.put("temperature", 0.0);
+            requestBody.put("response_format", Map.of("type", "json_object"));
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            String response = restTemplate.postForObject("https://api.openai.com/v1/chat/completions", entity, String.class);
+
+            JsonNode root = objectMapper.readTree(response);
+            String content = root.path("choices").get(0).path("message").path("content").asText();
+
+            JsonNode resultJson = objectMapper.readTree(content);
+            if (resultJson.has("productId") && !resultJson.get("productId").isNull()) {
+                int matchedId = resultJson.get("productId").asInt();
+                return productRepository.findById(matchedId);
             }
-        }
-
-        // 3. 포함 관계가 없을 때만 유사도(Jaro-Winkler) 비교 진행 (3순위)
-        ProductEntity bestMatch = null;
-        double maxSimilarity = -1.0;
-
-        for (ProductEntity product : candidates) {
-            String cleanedDbName = cleanText(product.getProductName());
-            double similarity = jaroWinkler.apply(cleanedInput, cleanedDbName);
-
-            if (similarity > maxSimilarity) {
-                maxSimilarity = similarity;
-                bestMatch = product;
-            }
-        }
-
-        // 임계값을 0.75~0.8 정도로 높여 엉뚱한 상품 매칭 방지
-        double THRESHOLD = 0.75;
-        if (maxSimilarity >= THRESHOLD) {
-            return Optional.ofNullable(bestMatch);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return Optional.empty();
-    }
-
-    // 알파벳, 한글, 숫자만 남기고 제거하는 전처리 메서드
-    private String cleanText(String text) {
-        if (text == null) return "";
-        return text.replaceAll("[^a-zA-Z0-9가-힣]", "").toUpperCase();
     }
 }
