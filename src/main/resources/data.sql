@@ -1,3 +1,50 @@
+-- 테이블 생성 (없으면 생성)
+CREATE TABLE IF NOT EXISTS users (
+                                     user_id BIGINT PRIMARY KEY,
+                                     user_name VARCHAR(255) NOT NULL
+    );
+
+CREATE TABLE IF NOT EXISTS offline_stores (
+                                              store_id BIGINT PRIMARY KEY,
+                                              region_category INT,
+                                              store_name VARCHAR(255) NOT NULL,
+    open_time VARCHAR(10),
+    close_time VARCHAR(10),
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION
+    );
+
+CREATE TABLE IF NOT EXISTS visit_cards (
+                                           card_id BIGSERIAL PRIMARY KEY,
+                                           user_id BIGINT,
+                                           store_id BIGINT,
+                                           gender INT,
+                                           find_product_category INT,
+                                           mood_category INT,
+                                           purpose_text TEXT,
+                                           visit_time TIMESTAMP,
+                                           support_status INT,
+                                           ai_mood TEXT,
+                                           recommended_route TEXT,
+                                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS products (
+                                        product_id BIGINT PRIMARY KEY,
+                                        zone VARCHAR(255),
+    product_name VARCHAR(255) NOT NULL,
+    product_category INT,
+    product_img TEXT,
+    product_detail TEXT,
+    stock INT,
+    location VARCHAR(255)
+    );
+
+CREATE TABLE IF NOT EXISTS best_products (
+                                             id BIGSERIAL PRIMARY KEY,
+                                             product_id BIGINT
+);
+
 -- 유저 더미 데이터
 INSERT INTO users (user_id, user_name) VALUES
                                            (1, 'WWW'),
