@@ -1150,37 +1150,42 @@ public class WallartService {
 
     // OpenAI URL로부터 이미지를 다운로드 받아 로컬 디렉터리에 저장
     private String saveBase64Image(String base64Image, Integer visitCardId) {
-
         try {
-            // 주입받은 uploadDir 사용
-            Path uploadPath = Paths.get(UPLOAD_DIR);
+            // 1. null 또는 빈 값 체크
+            if (base64Image == null || base64Image.trim().isEmpty()) {
+                throw new IllegalArgumentException("Base64 이미지 데이터가 비어있습니다.");
+            }
 
+            // 2. Base64 Prefix(data:image/png;base64,) 제거
+            if (base64Image.contains(",")) {
+                base64Image = base64Image.split(",")[1];
+            }
+
+            // 3. 줄바꿈 및 공백 문자 제거
+            base64Image = base64Image.replaceAll("\\s+", "");
+
+            // 4. 업로드 디렉터리 생성
+            Path uploadPath = Paths.get(UPLOAD_DIR);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
-            // Base64 디코딩
-            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
-
-            // 파일명 생성
+            // 5. 파일 생성 및 저장
             String fileName = visitCardId + ".png";
-
             Path targetPath = uploadPath.resolve(fileName);
 
-            // 물리 디렉터리에 이미지 저장
+            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
             Files.write(targetPath, imageBytes);
 
             System.out.println("이미지 저장 완료: " + targetPath.toAbsolutePath());
 
-            // 2. [핵심] 클라이언트가 접속할 수 있는 웹 URL 경로 반환
+            // 6. DB에 저장할 웹 접속 URL 또는 파일 경로 반환
+            // UPLOAD_DIR 끝에 이미 '/'가 들어가 있으므로 그대로 결합 가능
             return UPLOAD_DIR + fileName;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(
-                    "Base64 이미지를 로컬에 저장하는 중 오류가 발생했습니다.",
-                    e
-            );
-        }
+            System.out.println("Base64 저장 실패: " + e.getMessage());
+            e.printStackTrace(); // 콘솔에 상세한 에러 스택트레이스 출력
+            throw new RuntimeException("Base64 이미지를 로컬에 저장하는 중 오류가 발생했습니다.", e);        }
     }
 }
