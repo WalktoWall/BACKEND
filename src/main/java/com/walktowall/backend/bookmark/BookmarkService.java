@@ -25,6 +25,7 @@ public class BookmarkService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
 
+    @Transactional
     public CreateBookmarkResponse createBookmark(Integer userId, Integer productId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
