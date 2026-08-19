@@ -59,7 +59,10 @@ public class WallartService {
     private final String OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions";
 
     // 로컬 이미지 저장 위치
-    private final String UPLOAD_DIR = "uploads/wallarts/";
+    // private final String UPLOAD_DIR = "uploads/wallarts/";
+
+    @Value("${file.upload-dir}")
+    private String UPLOAD_DIR;
 
     public ReadWallartResponse ReadWallart(Integer userId) {
         VisitCard visitCard = visitCardRepository.findFirstByUser_UserIdOrderByCreatedAtDesc(userId)
@@ -1149,7 +1152,7 @@ public class WallartService {
     private String saveBase64Image(String base64Image, Integer visitCardId) {
 
         try {
-            // 디렉터리가 없으면 생성
+            // 주입받은 uploadDir 사용
             Path uploadPath = Paths.get(UPLOAD_DIR);
 
             if (!Files.exists(uploadPath)) {
@@ -1164,12 +1167,13 @@ public class WallartService {
 
             Path targetPath = uploadPath.resolve(fileName);
 
-            // 이미지 저장
+            // 물리 디렉터리에 이미지 저장
             Files.write(targetPath, imageBytes);
 
-            System.out.println("이미지 저장 완료: " + targetPath);
+            System.out.println("이미지 저장 완료: " + targetPath.toAbsolutePath());
 
-            return targetPath.toString();
+            // 2. [핵심] 클라이언트가 접속할 수 있는 웹 URL 경로 반환
+            return "/uploads/wallarts/" + fileName;
 
         } catch (Exception e) {
             e.printStackTrace();
