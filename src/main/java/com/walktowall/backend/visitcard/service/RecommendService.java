@@ -531,6 +531,7 @@ public class RecommendService {
         return "";
     }
 
+    @Transactional
     public RecommendProductResponse getRecommendedProducts(Integer visitCardId) {
 
         VisitCard visitCard = visitCardRepository.findById(visitCardId)
