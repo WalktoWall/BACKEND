@@ -9,4 +9,7 @@ import lombok.*;
 @Builder
 public class RecordProductScanResponse {
     private String message;
+    private Integer productId;
+    private String productName;
+    private String productImg;
 }

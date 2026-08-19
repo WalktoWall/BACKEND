@@ -86,6 +86,9 @@ public class ProductService {
 
         return RecordProductScanResponse.builder()
                 .message("스캔 상품이 등록되었습니다.")
+                .productId(productScan.getProduct().getProductId())
+                .productName(productScan.getProduct().getProductName())
+                .productImg(productScan.getProduct().getProductImg())
                 .build();
     }
 
