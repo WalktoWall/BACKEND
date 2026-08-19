@@ -1173,7 +1173,7 @@ public class WallartService {
             System.out.println("이미지 저장 완료: " + targetPath.toAbsolutePath());
 
             // 2. [핵심] 클라이언트가 접속할 수 있는 웹 URL 경로 반환
-            return "/uploads/wallarts/" + fileName;
+            return UPLOAD_DIR + fileName;
 
         } catch (Exception e) {
             e.printStackTrace();
