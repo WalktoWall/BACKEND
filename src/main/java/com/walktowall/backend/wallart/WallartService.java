@@ -73,7 +73,7 @@ public class WallartService {
         return ReadWallartResponse.builder()
                 .message("월아트 이미지 조회를 성공했습니다.")
                 .wallartId(wallart.get().getWallartId())
-                .wallarImg(wallart.get().getWallartImg())
+                .wallartImg(wallart.get().getWallartImg())
                 .wallartText(wallart.get().getWallartText())
                 .build();
     }
