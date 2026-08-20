@@ -24,8 +24,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
 
-                // 3. 로그인 요구 없이 모든 요청 허용 (시연용)
+                // 3. 모든 API 및 이미지 정적 자원 요청 허용 (CORB 문제 방지)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/var/app/uploads/wallarts/**", "/images/**").permitAll()
                         .anyRequest().permitAll()
                 )
 
@@ -36,21 +37,21 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // CORS 상세 설정 Bean
+    // CORS 상세 설정 Bean (CORB 차단 해결의 핵심)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 허용할 프론트엔드 Origin 지정
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        // 1. 모든 Origin 허용 (allowedOrigins 대신 allowedOriginPatterns 사용)
+        configuration.setAllowedOriginPatterns(List.of("*"));
 
-        // 허용할 HTTP 메서드 지정
+        // 2. 허용할 HTTP 메서드 지정
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
-        // 모든 헤더 허용
+        // 3. 모든 헤더 허용
         configuration.setAllowedHeaders(List.of("*"));
 
-        // 쿠키 및 인증 헤더 포함 허용
+        // 4. 쿠키 및 인증 헤더 포함 허용
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
