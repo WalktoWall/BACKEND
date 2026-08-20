@@ -4,6 +4,7 @@ import com.walktowall.backend.store.OfflineStore;
 import com.walktowall.backend.user.User;
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.ZoneId;
 
 import java.time.LocalDateTime;
 
@@ -66,6 +67,6 @@ public class VisitCard {
 
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 }
