@@ -50,7 +50,7 @@ public class StaffService {
 
         List<VisitCard> visitCards = visitCardRepository.findByVisitTimeBetween(startOfDay, endOfDay);
 
-        // 사용자별 가장 최신 VisitCard만 남김
+        // 사용자별 가장 최신 VisitCard(가장 큰 ID)만 남김
         Map<Integer, VisitCard> latestVisitCards =
                 visitCards.stream()
                         .collect(Collectors.toMap(
@@ -60,10 +60,7 @@ public class StaffService {
                                 visitCard -> visitCard,
 
                                 (existing, replacement) ->
-                                        replacement.getVisitTime()
-                                                .isAfter(
-                                                        existing.getVisitTime()
-                                                )
+                                        replacement.getVisitCardId() > existing.getVisitCardId()
                                                 ? replacement
                                                 : existing
                         ));
